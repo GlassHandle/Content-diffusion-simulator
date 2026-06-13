@@ -26,13 +26,16 @@ class RedditCollector:
 
         for feed_name,feed in feeds:
             for post in feed:
+                sub=post.subreddit
                 posts.append({
                     "id": post.id,
+                    "post_description": post.selftext or "",
                     "title": post.title,
                     "source": "reddit",
                     "region": "global",
                     "feed": feed_name,
-                    "subreddit": str(post.subreddit),
+                    "subreddit":sub.display_name,
+                    "subreddit_description":sub.public_description or "",
                     "created_utc": datetime.fromtimestamp(post.created_utc,UTC).strftime("%Y-%m-%d_%H.%M.%S"),
                     "extracted_utc": extraction_time,
                     "upvotes": post.score,
@@ -54,6 +57,6 @@ class RedditCollector:
 
 if __name__=="__main__":
     collector=RedditCollector()
-    posts=collector.collect(limit=200)
+    posts=collector.collect(limit=30)
     collector.save(posts)
     
