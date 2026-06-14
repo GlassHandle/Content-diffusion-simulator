@@ -2,6 +2,7 @@
 data
 __pycache__
 *.json
+Tags_dataset
 
 #virtual environment
 env
