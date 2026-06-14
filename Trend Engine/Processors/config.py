@@ -1,61 +1,53 @@
-TAGS = [
-    "technology", "artificial intelligence", "machine learning",
-    "deep learning", "cybersecurity", "software development",
-    "web development", "mobile apps", "cloud computing",
-    "data science", "blockchain", "virtual reality",
-    "augmented reality", "robotics", "hardware", "gadgets",
-    "programming", "python", "javascript", "open source",
-    "linux", "networking", "saas",
+STOP_CONCEPTS = {
+    "edit",
+    "update",
+    "tldr",
+    "source",
+    "everyone",
+    "someone",
+    "anyone",
+    "thing",
+    "things",
+    "way"
+}
+TYPE_WEIGHTS = {
+    "person": 5,
+    "organization": 4,
+    "event": 4,
+    "product": 3,
+    "location": 2,
+    "group": 1,
+    "initial": 0
+}
+IGNORE_ENTITY_TYPES = {
+    "DATE",
+    "TIME",
+    "CARDINAL",
+    "ORDINAL",
+    "MONEY",
+    "PERCENT",
+    "QUANTITY"
+}
+TYPE_MAP = {
+    "PERSON": "person",
+    "ORG": "organization",
+    "GPE": "location",
+    "LOC": "location",
+    "PRODUCT": "product",
+    "EVENT": "event",
+    "WORK_OF_ART": "media",
+}
 
-    "gaming", "video games", "esports", "tabletop games",
-    "board games", "anime", "manga", "movies",
-    "television", "streaming", "cinema", "documentaries",
-    "music", "hip hop", "pop music", "rock music",
-    "classical music", "podcasts", "celebrity",
-    "pop culture", "comics",
+TYPE_HINTS = {
+    "person": ["person", "player", "athlete", "cricketer", "footballer", "actor", "actress", "singer", "politician", "scientist", "author"],
+    "organization": ["organization", "company", "corporation", "developer", "team", "club", "university", "agency", "institution"],
+    "location": ["country", "city", "state", "district", "province", "region", "location"],
+    "product": ["product", "video game", "software", "phone", "application", "service", "model"],
+    "event": ["event", "tournament", "league", "championship", "cup", "competition", "festival"],
+    "media": ["movie", "film", "song", "album", "television", "series", "book", "novel"]
+}
 
-    "sports", "basketball", "football", "soccer",
-    "cricket", "baseball", "tennis", "golf",
-    "formula 1", "motorsport", "mma", "boxing",
-    "wrestling", "athletics", "cycling", "hiking",
-    "camping", "fishing",
-
-    "finance", "stock market", "cryptocurrency",
-    "bitcoin", "investing", "personal finance",
-    "real estate", "business", "entrepreneurship",
-    "startups", "marketing", "economics",
-    "leadership", "management", "sales",
-
-    "science", "physics", "chemistry", "biology",
-    "astronomy", "space exploration", "mathematics",
-    "history", "geography", "philosophy",
-    "psychology", "sociology", "education",
-    "online learning", "language learning", "research",
-
-    "health", "fitness", "nutrition", "mental health",
-    "wellness", "yoga", "bodybuilding", "weight loss",
-    "veganism", "skincare", "fashion", "style",
-    "beauty", "travel", "backpacking", "tourism",
-
-    "food", "cooking", "baking", "recipes",
-    "restaurants", "street food", "coffee",
-    "tea", "wine", "craft beer", "cocktails",
-    "culinary arts",
-
-    "art", "digital art", "photography",
-    "architecture", "interior design", "diy",
-    "crafts", "woodworking", "gardening",
-    "pets", "dogs", "cats", "cars",
-    "motorcycles", "aviation", "reading",
-    "books", "literature",
-
-    "politics", "news", "world news",
-    "law", "religion", "spirituality",
-    "memes", "humor", "funny", "viral",
-    "internet culture", "social media",
-    "vlogging", "productivity", "life hacks",
-    "relationships"
-]
 MODEL_NAME = "paraphrase-multilingual-MiniLM-L12-v2"
 TOP_N_TAGS = 5
-TOP_N_KEYWORDS = 10
+TOP_N_KEYWORDS = 7
+TOP_N_CONCEPTS = 10
