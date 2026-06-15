@@ -2,6 +2,7 @@ import json
 from pathlib import Path
 
 from Processors.pipeline import TrendProcessor
+from Clusterer.pipeline import ClusteringPipeline
 
 BASE_DIR = Path(__file__).resolve().parent
 
@@ -30,3 +31,15 @@ for source, text_builder in SOURCES.items():
         json.dump(results,f,indent=4,ensure_ascii=False)
 
     print(f"Processed {source}")
+
+
+# ---- Clustering ----
+print("\n" + "="*60)
+print("Starting clustering pipeline...")
+print("="*60)
+
+clustering_pipeline = ClusteringPipeline(
+    input_file=str(BASE_DIR.parent / "data"/"normalised"/"normalised.json"),
+    output_file=str(temp_dir / "clustered.json"),
+)
+clustering_pipeline.run()
