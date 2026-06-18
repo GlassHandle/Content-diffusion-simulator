@@ -38,7 +38,6 @@ class Tagger:
                 )
 
         embeddings = self.model.encode(tag_texts,show_progress_bar=True)
-
         with open(self.pkl_path, "wb") as f:
             pickle.dump(
                 {
@@ -74,38 +73,18 @@ class Tagger:
         (self.tag_paths,self.tag_texts,embeddings) = self.prepare_dataset()
         return embeddings
 
-    def get_tags(
-        self,
-        description,
-        top_n=10,
-        threshold=0.45
-    ):
-        embedding = self.model.encode(
-            description,
-            show_progress_bar=False
-        )
-
-        scores = cosine_similarity(
-            [embedding],
-            self.tag_embeddings
-        )[0]
-
-        tags = {}
+    def get_tags(self, description, top_n=8, threshold=0.55):
+        embedding = self.model.encode(description,show_progress_bar=False)
+        scores=cosine_similarity([embedding],self.tag_embeddings)[0]
+        tags={}
 
         for idx in scores.argsort()[::-1]:
-            score = float(scores[idx])
-
+            score=float(scores[idx])
             if score < threshold:
                 break
-
-            path = self.tag_paths[idx]
-
-            for tag in path:
-                tags[tag] = max(
-                    tags.get(tag, 0),
-                    score
-                )
-
+            path=" > ".join(self.tag_paths[idx])
+            if path not in tags:
+                tags[path] = round(score, 4)
             if len(tags) >= top_n:
                 break
 

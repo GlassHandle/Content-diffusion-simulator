@@ -1,17 +1,4 @@
-import re
-
-def valid_keyword(keyword):
-    keyword = keyword.lower().strip()
-    if len(keyword) < 3:
-        return False
-    if keyword.isdigit():
-        return False
-    if not re.search(r"[a-zA-Z]", keyword):
-        return False
-    if "http://" in keyword or "https://" in keyword:
-        return False
-    return True
-
+from .concepts import isValid,normalize
 
 def get_keywords(text, kw_model, top_n=10):
     keywords = kw_model.extract_keywords(
@@ -27,23 +14,22 @@ def get_keywords(text, kw_model, top_n=10):
     seen = set()
 
     for keyword, score in keywords:
-        keyword = keyword.lower().strip()
-        if not valid_keyword(keyword):
+        keyword = normalize(keyword)
+        if not isValid(keyword):
             continue
         if keyword in seen:
             continue
         seen.add(keyword)
         candidates.append((keyword,round(float(score),4)))
 
-    candidates.sort(key=lambda x: len(x[0].split()),reverse=True)
+    candidates.sort(key=lambda x: x[1],reverse=True)
 
     results = {}
     covered_words = set()
 
     for keyword, score in candidates:
         words = set(keyword.split())
-        overlap=len(words & covered_words)
-        if overlap>=2:
+        if len(words & covered_words)>=2:
             continue
         results[keyword] = score
         covered_words.update(words)

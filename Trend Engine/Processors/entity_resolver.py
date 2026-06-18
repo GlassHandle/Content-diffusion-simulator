@@ -1,7 +1,7 @@
 import numpy as np
 from sentence_transformers import SentenceTransformer
 from sklearn.metrics.pairwise import cosine_similarity
-from .config import MODEL_NAME, TYPE_HINTS
+from .config import MODEL_NAME
 
 class EntityResolver:
     def __init__(self):
@@ -13,7 +13,7 @@ class EntityResolver:
             self.embedding_cache[text] = self.model.encode(text,show_progress_bar=False)
         return self.embedding_cache[text]
 
-    def resolve(self, entity, entity_type, candidates, source_text):
+    def resolve(self, entity, candidates, source_text, DEBUG=False):
         candidates = [
             candidate
             for candidate in candidates
@@ -23,15 +23,19 @@ class EntityResolver:
             return None
 
         if len(candidates) == 1:
-            return candidates[0]
+            candidate = candidates[0]
+            if not candidate.get("description"):
+                return None
+
+            return candidate
 
         context_text = f"Entity: {entity}. Context: {source_text}"
         context_embedding = self.get_embedding(context_text)
 
-        print(f"\n{'=' * 60}")
-        print(f"ENTITY: {entity}")
-        print(f"TYPE: {entity_type}")
-        print(f"{'=' * 60}")
+        if DEBUG:
+            print(f"\n{'=' * 60}")
+            print(f"ENTITY: {entity}")
+            print(f"{'=' * 60}")
 
         candidate_texts = [f'{candidate["label"]} {candidate["description"]}' for candidate in candidates]
 
@@ -47,34 +51,19 @@ class EntityResolver:
                 self.embedding_cache[text] = embedding
 
         candidate_matrix = np.array([self.embedding_cache[text] for text in candidate_texts])
-
         scores = cosine_similarity([context_embedding],candidate_matrix)[0]
-        hints = TYPE_HINTS.get(entity_type,[])
-
-        for i, candidate in enumerate(candidates):
-            description = candidate["description"].lower()
-
-            if any(hint in description for hint in hints):
-                scores[i] += 0.03
-
-            print(
-                f'{candidate["label"]}\n'
-                f'  Desc  : {candidate["description"]}\n'
-                f'  Score : {scores[i]:.4f}\n'
-            )
-
         best_idx = scores.argmax()
 
-        print(f"SELECTED -> {candidates[best_idx]['label']}")
+        if DEBUG:
+            print(f"SELECTED -> {candidates[best_idx]}")
         return candidates[best_idx]
 
-    def resolve_all(self,concepts,entity_candidates,source_text):
+    def resolve_all(self,entity_candidates,source_text):
         resolved = {}
 
         for entity, candidates in entity_candidates.items():
             resolved[entity] = self.resolve(
                 entity,
-                concepts.get(entity, "OTHER"),
                 candidates,
                 source_text
             )

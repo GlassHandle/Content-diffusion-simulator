@@ -1,6 +1,5 @@
 import requests
 from time import sleep
-
 from .cache import EntityCache
 
 SEARCH_URL = "https://www.wikidata.org/w/api.php"
