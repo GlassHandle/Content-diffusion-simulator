@@ -15,6 +15,9 @@ youtube=build(
 )
 
 class YoutubeCollector:
+    def __init__(self):
+        self.base_dir = Path(__file__).resolve().parent
+        
     def collect(self,region="IN",limit=50):
         request=youtube.videos().list(
             part="snippet,statistics",

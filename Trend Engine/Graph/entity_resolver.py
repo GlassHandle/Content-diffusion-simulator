@@ -25,7 +25,13 @@ class GraphEntityResolver:
         return self.embedding_cache[text]
 
     def _precompute_candidate_embeddings(self):
-        for node in self.graph.nodes():
+        for node,data in self.graph.nodes(data=True):
+            if data.get("node_type") != "entity":
+                continue
+
+            if data.get("resolved") is not None:
+                continue
+
             node_data = self.graph.nodes[node]
             candidates = node_data.get("candidates", [])
 
@@ -74,13 +80,6 @@ class GraphEntityResolver:
             return None
 
         neighbors = list(self.graph.neighbors(node))
-
-        if len(neighbors) == 0:
-            best_candidate = candidates[0]
-            node_data["resolved"] = best_candidate
-            node_data["confidence"] = 0.3
-            return best_candidate
-
         best_candidate = None
         best_score = -float("inf")
         debug_scores = {}
@@ -115,7 +114,27 @@ class GraphEntityResolver:
 
     def resolve_all(self):
         resolved_count = 0
-        for node in self.graph.nodes():
+        for node,data in self.graph.nodes(data=True):
+            if data.get("node_type") != "entity":
+                continue
+            if data.get("resolved") is not None:
+                continue
+            candidates = data.get("candidates", [])
+
+            if not candidates:
+                continue
+
+            if len(candidates)==1:
+                data["resolved"] = candidates[0]
+                data["confidence"] = 1.0
+                resolved_count += 1
+                continue
+
+            neighbors = list(self.graph.neighbors(node))
+
+            if len(neighbors) < 2:
+                continue
+
             result = self.resolve_node(node)
             if result is not None:
                 resolved_count += 1

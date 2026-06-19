@@ -15,6 +15,9 @@ reddit=praw.Reddit(
 )
 
 class RedditCollector:
+    def __init__(self):
+        self.base_dir = Path(__file__).resolve().parent
+
     def collect(self,limit=500):
         posts=[]
         feeds=[

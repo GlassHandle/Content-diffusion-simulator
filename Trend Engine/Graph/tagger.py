@@ -4,6 +4,7 @@ from pathlib import Path
 from sentence_transformers import SentenceTransformer
 from sklearn.metrics.pairwise import cosine_similarity
 from .config import (TAGGER_MODEL_NAME,TOP_N_TAGS)
+from datetime import datetime, UTC, timedelta
 
 class GraphTagger:
     def __init__(self):
@@ -73,6 +74,10 @@ class GraphTagger:
         (self.tag_paths,self.tag_texts,embeddings) = self.prepare_dataset()
         return embeddings
 
+    def recently_seen(self, timestamp, hours=2):
+        last_seen = datetime.fromisoformat(timestamp)
+        return datetime.now(UTC) - last_seen <= timedelta(hours=hours)
+
     
     def build_neighborhood_context(self,graph, node):
         texts = []
@@ -111,25 +116,33 @@ class GraphTagger:
 
         return tags
     
-    def get_graph_tags(self,graph,node,top_n=8,threshold=0.50):
-        context = (self.build_neighborhood_context(graph,node))
-        neighbors = list(graph.neighbors(node))
-        if len(neighbors) == 0:
-            return {}
-
+    def get_graph_tags(self,context,top_n=8,threshold=0.50):
         return self.get_tags(
             context,
             top_n=top_n,
             threshold=threshold
         )
     
-    def tag_graph(self,graph,tag_builder):
-        for node in list(graph.nodes()):
-            if str(node).startswith("TAG::"):
+    def tag_graph(self,graph,tag_builder,hours=2):
+        for node,data in list(graph.nodes(data=True)):
+            if data.get("node_type") != "entity":
                 continue
 
+            if not self.recently_seen(data["last_seen"],hours):
+                continue
+
+            resolved = data.get("resolved")
+            if not resolved:
+                continue
+
+            neighbors = list(graph.neighbors(node))
+            if len(neighbors)<2:
+                continue
             context = self.build_neighborhood_context(graph,node)
-            tags = self.get_graph_tags(graph,node)
+
+            tags = self.get_graph_tags(context=context)
+            if not tags:
+                continue
             tag_builder.add_tags(node,tags)
 
             graph.nodes[node]["tag_context"] = context
