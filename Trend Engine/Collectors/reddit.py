@@ -3,6 +3,7 @@ import json
 from pathlib import Path
 from dotenv import load_dotenv
 import praw
+import shutil
 from datetime import datetime,UTC
 
 load_dotenv()
@@ -43,17 +44,17 @@ class RedditCollector:
                 })
         return posts
     
-    def save(self,data):
-        BASE_DIR = Path(__file__).resolve().parent
-        dir=(BASE_DIR.parent.parent/"data"/"raw")
-        dir.mkdir(parents=True, exist_ok=True)
-        # filename = datetime.now(UTC).strftime("%Y-%m-%d_%H-%M-%S-reddit.json")
-        filename = datetime.now(UTC).strftime("reddit.json")
+    def save(self, data):
+        raw_dir = (self.base_dir.parent.parent/ "data"/ "raw")
+        raw_dir.mkdir(parents=True,exist_ok=True)
+        latest_file = (raw_dir / "reddit-latest.json")
+        last_file = (raw_dir / "reddit-last.json")
 
-        filepath=dir/filename
+        if latest_file.exists():
+            shutil.copy2(latest_file,last_file)
 
-        with open(filepath,"w",encoding="utf-8") as f:
-            json.dump(data,f,indent=4)
+        with open(latest_file,"w",encoding="utf-8") as f:
+            json.dump(data,f,indent=4,ensure_ascii=False)
 
 
 if __name__=="__main__":

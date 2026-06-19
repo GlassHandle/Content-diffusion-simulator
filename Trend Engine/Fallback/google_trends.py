@@ -1,6 +1,7 @@
 import json
 from pathlib import Path
 from datetime import datetime, UTC
+import shutil
 
 import feedparser
 
@@ -44,19 +45,17 @@ class GoogleTrendsCollector:
 
         return posts
 
-    def save(self, posts):
-        BASE_DIR = Path(__file__).resolve().parents[2]
-        output_dir = BASE_DIR / "data" / "raw"
-        output_dir.mkdir(parents=True, exist_ok=True)      
+    def save(self, data):
+        raw_dir = (self.base_dir.parent.parent/ "data"/ "raw")
+        raw_dir.mkdir(parents=True,exist_ok=True)
+        latest_file = (raw_dir / "google-trends-latest.json")
+        last_file = (raw_dir / "google-trends-last.json")
 
-        filename = datetime.now(UTC).strftime(
-            "%Y-%m-%d_%H-%M-%S-google_trends.json"
-        )
+        if latest_file.exists():
+            shutil.copy2(latest_file,last_file)
 
-        filepath = output_dir / filename
-
-        with open(filepath, "w", encoding="utf-8") as f:
-            json.dump(posts, f, indent=4)
+        with open(latest_file,"w",encoding="utf-8") as f:
+            json.dump(data,f,indent=4,ensure_ascii=False)
 
 
 if __name__ == "__main__":

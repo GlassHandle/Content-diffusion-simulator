@@ -3,11 +3,11 @@ import pandas as pd
 from pathlib import Path
 from sentence_transformers import SentenceTransformer
 from sklearn.metrics.pairwise import cosine_similarity
-from .config import MODEL_NAME
+from .config import (TAGGER_MODEL_NAME,TOP_N_TAGS)
 
-class Tagger:
+class GraphTagger:
     def __init__(self):
-        self.model = SentenceTransformer(MODEL_NAME)
+        self.model = SentenceTransformer(TAGGER_MODEL_NAME)
         base_dir = Path(__file__).resolve().parent
         self.dataset_dir=(base_dir/"Tags_dataset")
         self.pkl_path = (base_dir.parent.parent/"data" /"dataset"/"tag_embeddings.pkl")
@@ -73,7 +73,28 @@ class Tagger:
         (self.tag_paths,self.tag_texts,embeddings) = self.prepare_dataset()
         return embeddings
 
-    def get_tags(self, description, top_n=8, threshold=0.55):
+    
+    def build_neighborhood_context(self,graph, node):
+        texts = []
+        node_data = graph.nodes[node]
+        resolved = node_data.get("resolved")
+
+        if resolved:
+            texts.append(resolved.get("label", ""))
+            texts.append(resolved.get("description", ""))
+
+        for neighbor in graph.neighbors(node):
+            neighbor_resolved = graph.nodes[neighbor].get("resolved")
+
+            if not neighbor_resolved:
+                continue
+
+            texts.append(neighbor_resolved.get("label",""))
+            texts.append(neighbor_resolved.get("description",""))
+
+        return " ".join(texts)
+
+    def get_tags(self, description, top_n=TOP_N_TAGS, threshold=0.50):
         embedding = self.model.encode(description,show_progress_bar=False)
         scores=cosine_similarity([embedding],self.tag_embeddings)[0]
         tags={}
@@ -82,10 +103,34 @@ class Tagger:
             score=float(scores[idx])
             if score < threshold:
                 break
-            path=" > ".join(self.tag_paths[idx])
+            path = tuple(self.tag_paths[idx])
             if path not in tags:
                 tags[path] = round(score, 4)
             if len(tags) >= top_n:
                 break
 
         return tags
+    
+    def get_graph_tags(self,graph,node,top_n=8,threshold=0.50):
+        context = (self.build_neighborhood_context(graph,node))
+        neighbors = list(graph.neighbors(node))
+        if len(neighbors) == 0:
+            return {}
+
+        return self.get_tags(
+            context,
+            top_n=top_n,
+            threshold=threshold
+        )
+    
+    def tag_graph(self,graph,tag_builder):
+        for node in list(graph.nodes()):
+            if str(node).startswith("TAG::"):
+                continue
+
+            context = self.build_neighborhood_context(graph,node)
+            tags = self.get_graph_tags(graph,node)
+            tag_builder.add_tags(node,tags)
+
+            graph.nodes[node]["tag_context"] = context
+            graph.nodes[node]["generated_tags"]=tags

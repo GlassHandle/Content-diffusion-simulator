@@ -1,6 +1,5 @@
-from .keyword_extractor import get_keywords
+from .pipeline import TrendProcessor
+
 __all__ = [
-    "Processor",
-    "get_tags",
-    "get_keywords"
+    "TrendProcessor"
 ]

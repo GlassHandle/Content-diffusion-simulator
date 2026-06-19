@@ -18,12 +18,13 @@ class GoogleTrendsCollector:
     def save(self, data):
         raw_dir = (self.base_dir.parent.parent/ "data"/ "raw")
         raw_dir.mkdir(parents=True,exist_ok=True)
-        # filename = datetime.now(UTC).strftime("%Y-%m-%d_%H-%M-%S-google-trends.json")
-        filename = datetime.now(UTC).strftime("google-trends.json")
+        latest_file = (raw_dir / "google-trends-latest.json")
+        last_file = (raw_dir / "google-trends-last.json")
 
-        filepath = raw_dir / filename
+        if latest_file.exists():
+            shutil.copy2(latest_file,last_file)
 
-        with open(filepath,"w",encoding="utf-8") as f:
+        with open(latest_file,"w",encoding="utf-8") as f:
             json.dump(data,f,indent=4,ensure_ascii=False)
     
     @staticmethod

@@ -1,14 +1,18 @@
 from .concepts import isValid,normalize
+from keyphrase_vectorizers import KeyphraseCountVectorizer
 
-def get_keywords(text, kw_model, top_n=10):
-    keywords = kw_model.extract_keywords(
-        text,
-        keyphrase_ngram_range=(1, 3),
-        stop_words="english",
-        top_n=top_n * 3,
-        use_mmr=True,
-        diversity=0.7
-    )
+def get_keywords(text, kw_model, top_n=10,threshold=0.20):
+    vectorizer = KeyphraseCountVectorizer()
+    try:
+        keywords = kw_model.extract_keywords(
+            text,
+            vectorizer=vectorizer,
+            top_n=top_n * 3,
+            use_mmr=True,
+            diversity=0.9
+        )
+    except ValueError:
+        keywords = []
 
     candidates = []
     seen = set()
@@ -18,6 +22,8 @@ def get_keywords(text, kw_model, top_n=10):
         if not isValid(keyword):
             continue
         if keyword in seen:
+            continue
+        if score<threshold:
             continue
         seen.add(keyword)
         candidates.append((keyword,round(float(score),4)))
