@@ -99,7 +99,7 @@ provides much richer semantic information.
 # 3. System Architecture
 
 ```mermaid
-flowchart TD
+flowchart LR
 
     A[Collectors]:::dark
     B[Trend Processor]:::dark
@@ -1173,14 +1173,23 @@ Local entity caching.
 # 15. Current Capabilities
 
 [✓] Multi-source trend collection
+
 [✓] Named entity extraction
+
 [✓] Keyword extraction
+
 [✓] Wikidata candidate retrieval
+
 [✓] Graph construction
+
 [✓] Persistent graph storage
+
 [✓] Graph-based entity resolution
+
 [✓] Neighborhood-aware semantic tagging
+
 [✓] Hierarchical tags
+
 [✓] Automatic graph pruning
 
 ---
