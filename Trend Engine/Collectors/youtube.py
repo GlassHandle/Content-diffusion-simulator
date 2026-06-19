@@ -61,7 +61,3 @@ class YoutubeCollector:
         with open(latest_file,"w",encoding="utf-8") as f:
             json.dump(data,f,indent=4,ensure_ascii=False)
 
-if __name__=="__main__":
-    collector=YoutubeCollector()
-    videos=collector.collect(region="US",limit=50)
-    collector.save(videos)

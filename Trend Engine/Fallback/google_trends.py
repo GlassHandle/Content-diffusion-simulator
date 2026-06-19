@@ -1,64 +1,67 @@
 import json
-from pathlib import Path
-from datetime import datetime, UTC
 import shutil
+from datetime import datetime, UTC
+from pathlib import Path
 
 import feedparser
 
-class GoogleTrendsCollector:
+
+class GoogleTrendsFallback:
     def __init__(self, region="IN"):
         self.region = region
+        self.base_dir = Path(__file__).resolve().parent
+    
+    @staticmethod
+    def parse_search_volume(value):
+        if not value:
+            return 0
+        value = str(value).strip().upper().replace("+", "")
+        multipliers = {
+            "K": 1_000,
+            "M": 1_000_000,
+            "B": 1_000_000_000,
+        }
+        suffix = value[-1]
 
-    def _collect_daily(self):
-        url = f"https://trends.google.com/trending/rss?geo={self.region}"
+        if suffix in multipliers:
+            try:
+                return int(float(value[:-1]) * multipliers[suffix])
+            except ValueError:
+                return value
+        try:
+            return int(value)
+        except ValueError:
+            return value
 
+    def collect(self):
+        url = (f"https://trends.google.com/trending/rss"f"?geo={self.region}")
         feed = feedparser.parse(url)
-
         results = []
-
+        extraction_time = datetime.now(UTC).strftime("%Y-%m-%d_%H.%M.%S")
         for entry in feed.entries:
+            value=entry.get("ht_approx_traffic","")
+            value=self.parse_search_volume(value=value)
             results.append({
                 "id": "",
-                "title": entry.title,
-                "articles": [],
-                "image": "",
-                "created_utc": "",
-                "traffic": "",
+                "Trends": entry.title,
+                "Search volume": value,
+                "Started": entry.get("published",""),
+                "Ended": "",
+                "Trend breakdown": entry.get("ht_news_item_title",""),
+                "Explore link": entry.link,
+                "region": self.region,
+                "source": "google_trends",
+                "extraction_utc": extraction_time
             })
 
         return results
-
-    def collect(self):
-        extraction_time = datetime.now(UTC).strftime("%Y-%m-%d_%H.%M.%S")
-
-        posts = []
-
-        for item in self._collect_daily():
-            item.update({
-                "source": "google_trends",
-                "region": self.region,
-                "feed": "daily",
-                "extracted_utc": extraction_time,
-            })
-
-            posts.append(item)
-
-        return posts
 
     def save(self, data):
         raw_dir = (self.base_dir.parent.parent/ "data"/ "raw")
         raw_dir.mkdir(parents=True,exist_ok=True)
         latest_file = (raw_dir / "google-trends-latest.json")
         last_file = (raw_dir / "google-trends-last.json")
-
-        if latest_file.exists():
-            shutil.copy2(latest_file,last_file)
+        if latest_file.exists():shutil.copy2(latest_file,last_file)
 
         with open(latest_file,"w",encoding="utf-8") as f:
             json.dump(data,f,indent=4,ensure_ascii=False)
-
-
-if __name__ == "__main__":
-    collector = GoogleTrendsCollector(region="IN")
-    posts = collector.collect()
-    collector.save(posts)

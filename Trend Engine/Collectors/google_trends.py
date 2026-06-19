@@ -125,12 +125,3 @@ class GoogleTrendsCollector:
         
         finally:
             driver.quit()
-
-if __name__ == "__main__":
-    collector = GoogleTrendsCollector()
-
-    try:
-        data = collector.collect()
-
-    except Exception as e:
-        raise

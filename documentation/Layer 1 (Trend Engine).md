@@ -162,6 +162,34 @@ flowchart LR
     classDef dark fill:#666666,color:#ffffff,stroke:#333333,stroke-width:2px
 ```
 
+### Fallback Collection
+
+To improve reliability, the system includes lightweight fallback collectors for Reddit and Google Trends.
+
+When an API-based collector fails:
+
+* Reddit falls back to scraping the public `r/popular` feed.
+* Google Trends falls back to the public RSS trending feed.
+* If both the primary collector and fallback fail, an empty dataset is returned.
+
+```mermaid
+flowchart LR
+
+    A[Primary Collector]:::dark
+    B[Fallback Collector]:::dark
+    C[Empty Dataset]:::dark
+
+    A -->|Success| D[Raw Data]:::dark
+    A -->|Failure| B
+
+    B -->|Success| D
+    B -->|Failure| C
+
+    classDef dark fill:#666666,color:#ffffff,stroke:#333333,stroke-width:2px
+```
+
+Since the graph is persistent, previously collected trends are never reloaded as fallback data. If collection fails completely, the engine simply skips updates for that source and allows existing nodes to age naturally through the pruning system.
+
 Each collector is responsible only for:
 
 * Fetching data

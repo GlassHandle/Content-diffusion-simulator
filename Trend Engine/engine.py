@@ -1,11 +1,12 @@
 from Collectors import (YoutubeCollector,RedditCollector,GoogleTrendsCollector)
+from Fallback import (RedditFallback,GoogleTrendsFallback,scraper)
 from Graph import (GraphBuilder,GraphEntityResolver,GraphStore,GraphPruner,GraphTagger,TagNodeBuilder)
 from Processors import TrendProcessor
 
 TEXT_BUILDERS = {
     "reddit": lambda item:item.get("title","")+ " . "+ item.get("post_description",""),
     "youtube": lambda item: item.get("title","") + " . "+ item.get("description",""),
-    "google-trends": lambda item:item.get("Trend","")+ " , "+ item.get("Trend breakdown","")
+    "google-trends": lambda item:item.get("Trends","")+ " , "+ item.get("Trend breakdown","")
 }
 
 class TrendEngine:
@@ -15,6 +16,8 @@ class TrendEngine:
             "youtube": YoutubeCollector(),
             "google-trends": GoogleTrendsCollector()
         }
+        self.reddit_fallback=RedditFallback()
+        self.google_trends_fallback=GoogleTrendsFallback()
         self.processor = TrendProcessor()
         self.store = GraphStore()
         graph = self.store.load()
@@ -28,14 +31,32 @@ class TrendEngine:
         youtube = self.collectors["youtube"]
         trends = self.collectors["google-trends"]
 
-        reddit_data = reddit.collect(limit=40)
-        reddit.save(reddit_data)
+        try:
+            reddit_data = reddit.collect(limit=40)
+            reddit.save(reddit_data)
+        except Exception:
+            try:
+                reddit_data = scraper("https://www.reddit.com/r/popular/",self.reddit_fallback.collect)
+                self.reddit_fallback.save(reddit_data,"reddit")
+            except Exception:
+                reddit_data = []
 
-        youtube_data = youtube.collect(region="IN",limit=50)
-        youtube.save(youtube_data)
+        try:
+            youtube_data = youtube.collect(region="IN",limit=50)
+            youtube.save(youtube_data)
+        except Exception:
+            youtube_data = []
 
-        trends_data = trends.collect()
-        trends.save(trends_data)
+        try:
+            trends_data = trends.collect()
+            trends.save(trends_data)
+        except Exception:
+            try:
+                trends_data = (self.trends_fallback.collect())
+                self.trends_fallback.save(trends_data)
+
+            except Exception:
+                trends_data = []
 
         collected["reddit"] = reddit_data
         collected["youtube"] = youtube_data
@@ -75,6 +96,9 @@ class TrendEngine:
     def run(self):
         collected = self.collect()
         processed = self.process(collected)
+        if not processed:
+            print("No new data collected.")
+            return self.graph_builder.graph
         self.build_graph(processed)
         self.prune()
         self.save()
