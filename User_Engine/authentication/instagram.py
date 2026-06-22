@@ -37,7 +37,7 @@ TOKEN_URL = "https://api.instagram.com/oauth/access_token"  # code -> short-live
 GRAPH = "https://graph.instagram.com"                       # refresh + all data calls
 
 
-def get_auth_url(state: str = "ig_oauth") -> str:
+def ig_get_auth_url(state: str = "ig_oauth") -> str:
     params = {
         "client_id": CLIENT_ID,
         "redirect_uri": REDIRECT_URI,
@@ -48,7 +48,7 @@ def get_auth_url(state: str = "ig_oauth") -> str:
     return f"{AUTH_URL}?{urlencode(params)}"
 
 
-def exchange_code(code: str) -> dict:
+def ig_exchange_code(code: str) -> dict:
     # 1) authorization code -> short-lived token (also returns the IG user id)
     r = requests.post(TOKEN_URL, data={
         "client_id": CLIENT_ID,
@@ -80,7 +80,7 @@ def exchange_code(code: str) -> dict:
     return token
 
 
-def get_credentials() -> dict | None:
+def ig_get_credentials() -> dict | None:
     """Return a valid token dict, refreshing if near expiry. None if not connected.
 
     Named to match yt_oauth.get_credentials() so main.py calls both the same way.

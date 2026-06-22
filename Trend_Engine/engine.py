@@ -52,8 +52,8 @@ class TrendEngine:
             trends.save(trends_data)
         except Exception:
             try:
-                trends_data = (self.trends_fallback.collect())
-                self.trends_fallback.save(trends_data)
+                trends_data = (self.google_trends_fallback.collect())
+                self.google_trends_fallback.save(trends_data)
 
             except Exception:
                 trends_data = []

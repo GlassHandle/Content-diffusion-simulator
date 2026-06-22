@@ -1,11 +1,11 @@
 import requests
-from authentication.instagram import get_credentials
+from ..authentication.instagram import ig_get_credentials
 
 GRAPH = "https://graph.instagram.com"
 
 
 def fetch_instagram_data() -> dict:
-    token = get_credentials()
+    token = ig_get_credentials()
     if not token:
         raise RuntimeError("No valid Instagram credentials. Complete OAuth first.")
 

@@ -1,62 +1,47 @@
 import json
-from datetime import datetime, UTC
 from pathlib import Path
-
-from dotenv import load_dotenv
-load_dotenv()
-
-from fastapi import FastAPI, HTTPException
+from datetime import datetime, UTC
+from fastapi import APIRouter, HTTPException
 from fastapi.responses import RedirectResponse, JSONResponse
-
-from authentication import youtube as yt_oauth
-from authentication import instagram as ig_oauth
-from fetchers.youtube import fetch_youtube_data
-from fetchers.instagram import fetch_instagram_data
-from scoring.scorer import compute_scores
-
-app = FastAPI(title="Creator Intelligence Engine")
+from User_Engine import (authentication,fetchers,scoring)
 
 OUTPUT_DIR = Path(__file__).resolve().parent.parent.parent / "data" / "creators"
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
+router = APIRouter(tags=["Layer 2 - Creator Intelligence"])
 
-# ─────────────────────────────  AUTH  ─────────────────────────────
-
-@app.get("/auth/youtube")
+@router.get("/auth/youtube")
 def youtube_login():
     """Redirect creator to Google OAuth consent screen."""
-    return RedirectResponse(yt_oauth.get_auth_url())
+    return RedirectResponse(authentication.yt_get_auth_url())
 
 
-@app.get("/auth/youtube/callback")
+@router.get("/auth/youtube/callback")
 def youtube_callback(code: str):
     """Google redirects here after consent. Exchanges code for token."""
     try:
-        yt_oauth.exchange_code(code)
+        authentication.yt_exchange_code(code)
         return {"status": "YouTube connected successfully."}
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
-
-
-@app.get("/auth/instagram")
+    
+@router.get("/auth/instagram")
 def instagram_login():
     """Redirect creator to Instagram's hosted consent screen."""
-    return RedirectResponse(ig_oauth.get_auth_url())
+    return RedirectResponse(authentication.ig_get_auth_url())
 
 
-@app.get("/auth/instagram/callback")
+@router.get("/auth/instagram/callback")
 def instagram_callback(code: str):
     """Instagram redirects here after consent. Exchanges code for token."""
     try:
-        ig_oauth.exchange_code(code)
+        authentication.ig_exchange_code(code)
         return {"status": "Instagram connected successfully."}
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
 
-# ────────────────────────────  ANALYZE  ───────────────────────────
-
-@app.get("/creator/analyze")
+@router.get("/creator/analyze")
 def analyze_creator():
     """Fetch data from connected platforms and return creator scores."""
     youtube_data   = None
@@ -64,14 +49,14 @@ def analyze_creator():
     errors         = {}
 
     try:
-        if yt_oauth.get_credentials():
-            youtube_data = fetch_youtube_data()
+        if authentication.yt_get_credentials():
+            youtube_data = fetchers.fetch_youtube_data()
     except Exception as e:
         errors["youtube"] = str(e)
 
     try:
-        if ig_oauth.get_credentials():
-            instagram_data = fetch_instagram_data()
+        if authentication.ig_get_credentials():
+            instagram_data = fetchers.fetch_instagram_data()
     except Exception as e:
         errors["instagram"] = str(e)
 
@@ -84,7 +69,7 @@ def analyze_creator():
             },
         )
 
-    scores = compute_scores(youtube_data, instagram_data)
+    scores = scoring.compute_scores(youtube_data, instagram_data)
 
     result = {
         "analyzed_at": datetime.now(UTC).strftime("%Y-%m-%d_%H.%M.%S"),
@@ -109,33 +94,3 @@ def analyze_creator():
 
     return JSONResponse(content=result)
 
-
-# ─────────────────────────────  ROOT  ─────────────────────────────
-
-@app.get("/")
-def root():
-    connected = []
-    try:
-        if yt_oauth.get_credentials():
-            connected.append("youtube")
-    except Exception:
-        pass
-    try:
-        if ig_oauth.get_credentials():
-            connected.append("instagram")
-    except Exception:
-        pass
-    return {
-        "service":   "Creator Intelligence Engine",
-        "connected": connected,
-        "endpoints": [
-            "GET /auth/youtube",
-            "GET /auth/instagram",
-            "GET /creator/analyze",
-        ],
-    }
-
-
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)

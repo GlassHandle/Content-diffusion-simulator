@@ -30,7 +30,7 @@ CLIENT_CONFIG = {
 _flow_store: Flow | None = None
 
 
-def get_auth_url() -> str:
+def yt_get_auth_url() -> str:
     global _flow_store
     flow = Flow.from_client_config(CLIENT_CONFIG, scopes=SCOPES)
     flow.redirect_uri = REDIRECT_URI
@@ -43,7 +43,7 @@ def get_auth_url() -> str:
     return auth_url
 
 
-def exchange_code(code: str) -> Credentials:
+def yt_exchange_code(code: str) -> Credentials:
     global _flow_store
     if _flow_store is None:
         # fallback: create a fresh flow
@@ -59,7 +59,7 @@ def exchange_code(code: str) -> Credentials:
     return creds
 
 
-def get_credentials() -> Credentials | None:
+def yt_get_credentials() -> Credentials | None:
     if not TOKEN_PATH.exists():
         return None
     creds = Credentials.from_authorized_user_file(str(TOKEN_PATH), SCOPES)

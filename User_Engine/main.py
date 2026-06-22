@@ -2,13 +2,16 @@ import json
 from datetime import datetime, UTC
 from pathlib import Path
 
+from dotenv import load_dotenv
+load_dotenv()
+
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import RedirectResponse, JSONResponse
 
-from oauth import youtube as yt_oauth
-# from oauth import instagram as ig_oauth
+from authentication import youtube as yt_oauth
+from authentication import instagram as ig_oauth
 from fetchers.youtube import fetch_youtube_data
-# from fetchers.instagram import fetch_instagram_data
+from fetchers.instagram import fetch_instagram_data
 from scoring.scorer import compute_scores
 
 app = FastAPI(title="Creator Intelligence Engine")
@@ -16,6 +19,8 @@ app = FastAPI(title="Creator Intelligence Engine")
 OUTPUT_DIR = Path(__file__).resolve().parent.parent.parent / "data" / "creators"
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
+
+# ─────────────────────────────  AUTH  ─────────────────────────────
 
 @app.get("/auth/youtube")
 def youtube_login():
@@ -35,13 +40,13 @@ def youtube_callback(code: str):
 
 @app.get("/auth/instagram")
 def instagram_login():
-    """Redirect creator to Meta OAuth consent screen."""
+    """Redirect creator to Instagram's hosted consent screen."""
     return RedirectResponse(ig_oauth.get_auth_url())
 
 
 @app.get("/auth/instagram/callback")
 def instagram_callback(code: str):
-    """Meta redirects here after consent. Exchanges code for token."""
+    """Instagram redirects here after consent. Exchanges code for token."""
     try:
         ig_oauth.exchange_code(code)
         return {"status": "Instagram connected successfully."}
@@ -49,26 +54,23 @@ def instagram_callback(code: str):
         raise HTTPException(status_code=400, detail=str(e))
 
 
+# ────────────────────────────  ANALYZE  ───────────────────────────
+
 @app.get("/creator/analyze")
 def analyze_creator():
-    """
-    Fetch data from connected platforms and return creator scores.
-    At least one platform must be connected.
-    """
+    """Fetch data from connected platforms and return creator scores."""
     youtube_data   = None
     instagram_data = None
     errors         = {}
 
-    # Try YouTube
     try:
         if yt_oauth.get_credentials():
             youtube_data = fetch_youtube_data()
     except Exception as e:
         errors["youtube"] = str(e)
 
-    # Try Instagram
     try:
-        if ig_oauth.get_token():
+        if ig_oauth.get_credentials():
             instagram_data = fetch_instagram_data()
     except Exception as e:
         errors["instagram"] = str(e)
@@ -101,7 +103,6 @@ def analyze_creator():
         "errors": errors,
     }
 
-    # Save to data/creators/
     filename = datetime.now(UTC).strftime("%Y-%m-%d_%H-%M-%S-creator.json")
     with open(OUTPUT_DIR / filename, "w", encoding="utf-8") as f:
         json.dump(result, f, indent=4)
@@ -109,13 +110,21 @@ def analyze_creator():
     return JSONResponse(content=result)
 
 
+# ─────────────────────────────  ROOT  ─────────────────────────────
+
 @app.get("/")
 def root():
     connected = []
-    if yt_oauth.get_credentials():
-        connected.append("youtube")
-    if ig_oauth.get_token():
-        connected.append("instagram")
+    try:
+        if yt_oauth.get_credentials():
+            connected.append("youtube")
+    except Exception:
+        pass
+    try:
+        if ig_oauth.get_credentials():
+            connected.append("instagram")
+    except Exception:
+        pass
     return {
         "service":   "Creator Intelligence Engine",
         "connected": connected,
