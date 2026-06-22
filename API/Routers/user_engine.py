@@ -26,13 +26,12 @@ def youtube_login(user_id: str = Query(...)):
 
 @router.get("/auth/youtube/callback")
 def youtube_callback(code: str, state: str):
-    """Google redirects here after consent. State maps back to the user."""
     mapping = db.consume_state(state)
     if mapping is None:
         raise HTTPException(status_code=400, detail="Invalid or expired OAuth state.")
     user_id, _ = mapping
     try:
-        token = authentication.yt_exchange_code(code)
+        token = authentication.yt_exchange_code(code, state)  # pass state
         db.save_token(user_id, "youtube", token)
         return {"status": "YouTube connected successfully.", "user_id": user_id}
     except Exception as e:

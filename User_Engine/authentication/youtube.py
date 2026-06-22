@@ -32,9 +32,9 @@ def _new_flow() -> Flow:
     return flow
 
 
+_flow_store: dict[str, Flow] = {}
+
 def yt_get_auth_url(state: str) -> str:
-    """Build the Google consent URL, carrying `state` so the callback can be
-    correlated back to the user who started the flow."""
     flow = _new_flow()
     auth_url, _ = flow.authorization_url(
         prompt="consent",
@@ -42,15 +42,13 @@ def yt_get_auth_url(state: str) -> str:
         include_granted_scopes="true",
         state=state,
     )
+    _flow_store[state] = flow  # store flow
     return auth_url
 
-
-def yt_exchange_code(code: str) -> dict:
-    """Exchange an auth code for a token dict. Caller is responsible for storage."""
-    flow = _new_flow()
+def yt_exchange_code(code: str, state: str) -> dict:
+    flow = _flow_store.pop(state, None) or _new_flow()
     flow.fetch_token(code=code)
     return json.loads(flow.credentials.to_json())
-
 
 def yt_credentials_from_token(token: dict) -> tuple[Credentials | None, dict]:
     """Rebuild Credentials from a stored token dict, refreshing if expired.
