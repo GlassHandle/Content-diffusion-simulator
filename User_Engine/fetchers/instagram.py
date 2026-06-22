@@ -14,6 +14,11 @@ def fetch_instagram_data(token: dict) -> dict:
     profile_resp.raise_for_status()
     profile = profile_resp.json()
 
+    if profile.get("account_type") not in ("BUSINESS", "MEDIA_CREATOR", "CREATOR"):
+        raise RuntimeError(
+            "Instagram analysis requires a public Business or Creator account."
+        )
+
     # ── Last 20 posts ──
     media_resp = requests.get(f"{GRAPH}/{uid}/media", params={
         "fields": "id,caption,media_type,timestamp,like_count,comments_count,permalink",
@@ -22,8 +27,6 @@ def fetch_instagram_data(token: dict) -> dict:
     })
     media_resp.raise_for_status()
 
-    # Keep the RAW Graph field names per post — scorer._score_instagram reads
-    # like_count, comments_count, and timestamp directly.
     recent_posts = []
     for m in media_resp.json().get("data", []):
         recent_posts.append({
@@ -43,14 +46,13 @@ def fetch_instagram_data(token: dict) -> dict:
         "followers":     int(profile.get("followers_count", 0) or 0),
         "following":     int(profile.get("follows_count", 0) or 0),
         "media_count":   int(profile.get("media_count", 0) or 0),
-        "monthly_reach": _safe_monthly_reach(uid, at),  # 0 unless insights scope is granted
+        "monthly_reach": _safe_monthly_reach(uid, at),
         "recent_posts":  recent_posts,
     }
 
 
 def _safe_monthly_reach(uid: str, at: str) -> int:
     """Account reach over the last 28 days. Needs instagram_business_manage_insights.
-
     Best-effort: returns 0 if the scope isn't granted or the metric name has
     changed, so it never breaks the analysis.
     """

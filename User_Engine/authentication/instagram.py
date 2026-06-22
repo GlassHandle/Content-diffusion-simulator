@@ -11,9 +11,6 @@ SCOPES = [
     # "instagram_business_manage_insights",   # uncomment once basic works
 ]
 
-# MUST be the *Instagram* app ID/secret from
-# Meta dashboard -> your app -> Instagram -> "API setup with Instagram login".
-# NOT your Facebook App ID.
 CLIENT_ID = os.getenv("INSTAGRAM_CLIENT_ID")
 CLIENT_SECRET = os.getenv("INSTAGRAM_CLIENT_SECRET")
 REDIRECT_URI = os.getenv(
@@ -69,7 +66,6 @@ def ig_exchange_code(code: str) -> dict:
 
 def ig_credentials_from_token(token: dict) -> tuple[dict | None, dict]:
     """Validate a stored IG token dict, refreshing if within 5 days of expiry.
-
     Returns (valid_token_or_None, token_dict_to_persist).
     """
     if token.get("expires_at", 0) - time.time() < 5 * 24 * 3600:

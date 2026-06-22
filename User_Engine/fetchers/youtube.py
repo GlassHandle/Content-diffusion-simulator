@@ -10,6 +10,9 @@ def fetch_youtube_data(creds) -> dict:
         mine=True,
     ).execute()
 
+    if not channel_resp.get("items"):
+        raise RuntimeError("This Google account has no YouTube channel.")
+
     channel = channel_resp["items"][0]
     snippet = channel["snippet"]
     stats   = channel["statistics"]

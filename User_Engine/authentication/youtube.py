@@ -6,6 +6,7 @@ from google.auth.transport.requests import Request
 from dotenv import load_dotenv
 
 load_dotenv()
+os.environ.setdefault("OAUTHLIB_RELAX_TOKEN_SCOPE", "1")
 
 SCOPES = [
     "https://www.googleapis.com/auth/youtube.readonly",
@@ -53,7 +54,6 @@ def yt_exchange_code(code: str) -> dict:
 
 def yt_credentials_from_token(token: dict) -> tuple[Credentials | None, dict]:
     """Rebuild Credentials from a stored token dict, refreshing if expired.
-
     Returns (creds_or_None, token_dict_to_persist). The token dict is returned
     (possibly refreshed) so the caller can write the new access token back.
     """

@@ -1,6 +1,5 @@
 from datetime import datetime, timezone
 
-
 def _safe_div(a: float, b: float) -> float:
     return a / b if b else 0.0
 
