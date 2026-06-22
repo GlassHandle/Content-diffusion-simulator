@@ -2,6 +2,9 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from .Routers import user_engine
+from . import db
+
+db.init_db()
 
 app = FastAPI(title="Content Diffusion Simulator API")
 origins = [

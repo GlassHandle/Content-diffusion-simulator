@@ -1,5 +1,5 @@
 import os
-from pathlib import Path
+import json
 from google_auth_oauthlib.flow import Flow
 from google.oauth2.credentials import Credentials
 from google.auth.transport.requests import Request
@@ -11,9 +11,6 @@ SCOPES = [
     "https://www.googleapis.com/auth/youtube.readonly",
     "https://www.googleapis.com/auth/yt-analytics.readonly",
 ]
-
-TOKEN_PATH = Path(__file__).resolve().parent.parent / "tokens" / "youtube.json"
-TOKEN_PATH.parent.mkdir(parents=True, exist_ok=True)
 
 REDIRECT_URI = os.getenv("YOUTUBE_REDIRECT_URI", "http://localhost:8000/auth/youtube/callback")
 
@@ -27,48 +24,43 @@ CLIENT_CONFIG = {
     }
 }
 
-_flow_store: Flow | None = None
 
-
-def yt_get_auth_url() -> str:
-    global _flow_store
+def _new_flow() -> Flow:
     flow = Flow.from_client_config(CLIENT_CONFIG, scopes=SCOPES)
     flow.redirect_uri = REDIRECT_URI
+    return flow
+
+
+def yt_get_auth_url(state: str) -> str:
+    """Build the Google consent URL, carrying `state` so the callback can be
+    correlated back to the user who started the flow."""
+    flow = _new_flow()
     auth_url, _ = flow.authorization_url(
         prompt="consent",
         access_type="offline",
         include_granted_scopes="true",
+        state=state,
     )
-    _flow_store = flow
     return auth_url
 
 
-def yt_exchange_code(code: str) -> Credentials:
-    global _flow_store
-    if _flow_store is None:
-        # fallback: create a fresh flow
-        flow = Flow.from_client_config(CLIENT_CONFIG, scopes=SCOPES)
-        flow.redirect_uri = REDIRECT_URI
-    else:
-        flow = _flow_store
-
+def yt_exchange_code(code: str) -> dict:
+    """Exchange an auth code for a token dict. Caller is responsible for storage."""
+    flow = _new_flow()
     flow.fetch_token(code=code)
-    creds = flow.credentials
-    _save_token(creds)
-    _flow_store = None
-    return creds
+    return json.loads(flow.credentials.to_json())
 
 
-def yt_get_credentials() -> Credentials | None:
-    if not TOKEN_PATH.exists():
-        return None
-    creds = Credentials.from_authorized_user_file(str(TOKEN_PATH), SCOPES)
+def yt_credentials_from_token(token: dict) -> tuple[Credentials | None, dict]:
+    """Rebuild Credentials from a stored token dict, refreshing if expired.
+
+    Returns (creds_or_None, token_dict_to_persist). The token dict is returned
+    (possibly refreshed) so the caller can write the new access token back.
+    """
+    creds = Credentials.from_authorized_user_info(token, SCOPES)
     if creds and creds.expired and creds.refresh_token:
         creds.refresh(Request())
-        _save_token(creds)
-    return creds if creds and creds.valid else None
-
-
-def _save_token(creds: Credentials) -> None:
-    with open(TOKEN_PATH, "w") as f:
-        f.write(creds.to_json())
+        token = json.loads(creds.to_json())
+    if creds and creds.valid:
+        return creds, token
+    return None, token

@@ -1,11 +1,11 @@
-from .youtube import (yt_exchange_code,yt_get_auth_url,yt_get_credentials)
-from .instagram import (ig_exchange_code,ig_get_auth_url,ig_get_credentials)
+from .youtube import (yt_get_auth_url, yt_exchange_code, yt_credentials_from_token)
+from .instagram import (ig_get_auth_url, ig_exchange_code, ig_credentials_from_token)
 
-__all__=[
-    "yt_exchange_code",
+__all__ = [
     "yt_get_auth_url",
-    "yt_get_credentials",
-    "ig_exchange_code",
+    "yt_exchange_code",
+    "yt_credentials_from_token",
     "ig_get_auth_url",
-    "ig_get_credentials"
+    "ig_exchange_code",
+    "ig_credentials_from_token",
 ]

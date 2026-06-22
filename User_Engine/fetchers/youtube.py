@@ -1,11 +1,7 @@
 from googleapiclient.discovery import build
-from ..authentication.youtube import yt_get_credentials
 
-def fetch_youtube_data() -> dict:
-    creds = yt_get_credentials()
-    if not creds:
-        raise RuntimeError("No valid YouTube credentials. Complete OAuth first.")
 
+def fetch_youtube_data(creds) -> dict:
     yt = build("youtube", "v3", credentials=creds)
 
     # ── Channel stats ──

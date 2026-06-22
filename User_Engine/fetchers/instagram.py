@@ -1,14 +1,8 @@
 import requests
-from ..authentication.instagram import ig_get_credentials
 
 GRAPH = "https://graph.instagram.com"
 
-
-def fetch_instagram_data() -> dict:
-    token = ig_get_credentials()
-    if not token:
-        raise RuntimeError("No valid Instagram credentials. Complete OAuth first.")
-
+def fetch_instagram_data(token: dict) -> dict:
     uid = token["user_id"]
     at  = token["access_token"]
 
@@ -72,9 +66,9 @@ def _safe_monthly_reach(uid: str, at: str) -> int:
         if not data:
             return 0
         item = data[0]
-        if "total_value" in item:                 # newer response shape
+        if "total_value" in item:                
             return int(item["total_value"].get("value", 0) or 0)
-        if item.get("values"):                     # older time-series shape
+        if item.get("values"):                    
             return int(item["values"][-1].get("value", 0) or 0)
     except requests.RequestException:
         pass
