@@ -42,12 +42,13 @@ def youtube_callback(code: str, state: str):
 def instagram_login(user_id: str = Query(...)):
     """Start Instagram OAuth for a specific user_id."""
     state = db.create_state(user_id, "instagram")
-    return RedirectResponse(authentication.ig_get_auth_url(state))
+    url = authentication.ig_get_auth_url(state)
+    return RedirectResponse(url)
 
 
 @router.get("/auth/instagram/callback")
 def instagram_callback(code: str, state: str):
-    """Instagram redirects here after consent. State maps back to the user."""
+    """Instagram redirects here after consent from the user. Long-lived access token is generated using the code."""
     mapping = db.consume_state(state)
     if mapping is None:
         raise HTTPException(status_code=400, detail="Invalid or expired OAuth state.")
@@ -62,7 +63,7 @@ def instagram_callback(code: str, state: str):
 
 @router.get("/creator/analyze")
 def analyze_creator(user_id: str = Query(...)):
-    """Fetch the user's connected platforms and return creator scores."""
+    """Fetch the user's connected platforms and return creator scores using the stored tokens."""
     youtube_data = None
     instagram_data = None
     errors = {}

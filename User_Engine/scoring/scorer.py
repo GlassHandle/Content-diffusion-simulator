@@ -47,20 +47,18 @@ def _score_youtube(data: dict) -> dict:
 def _score_instagram(data: dict) -> dict:
     followers    = data.get("followers", 0)
     following    = data.get("following", 1)
-    media_count  = data.get("media_count", 1)
     recent_posts = data.get("recent_posts", [])
     monthly_reach = data.get("monthly_reach", 0)
 
-    # Engagement rate per post
-    engagement_rates = []
+    engagement_rate_per_post = []
     for p in recent_posts:
         likes    = p.get("like_count", 0)
         comments = p.get("comments_count", 0)
         if followers > 0:
             rate = _safe_div(likes + comments, followers)
-            engagement_rates.append(rate)
+            engagement_rate_per_post.append(rate)
 
-    avg_engagement = (sum(engagement_rates) / len(engagement_rates)) if engagement_rates else 0
+    avg_engagement = (sum(engagement_rate_per_post) / len(engagement_rate_per_post)) if engagement_rate_per_post else 0
 
     posting_freq = _calc_posting_frequency(
         [p.get("timestamp", "") for p in recent_posts]
@@ -78,7 +76,7 @@ def _score_instagram(data: dict) -> dict:
 
 
 def _calc_posting_frequency(timestamps: list[str]) -> float:
-    """Returns estimated posts per month from a list of ISO timestamps."""
+    """Returns estimated posts per month from a list of ISO timestamps (to find span days)."""
     dates = []
     for ts in timestamps:
         if not ts:
@@ -168,7 +166,6 @@ def compute_scores(youtube_data: dict | None, instagram_data: dict | None) -> di
         quality += _clamp(yt["avg_engagement_rate"] * 2000, 0, 100)
 
     if ig:
-        # Follower/following ratio + engagement
         ratio_score = _clamp(ig["follower_following_ratio"] * 10, 0, 50)
         eng_score   = _clamp(ig["avg_engagement_rate"] * 1000, 0, 50)
         quality    += ratio_score + eng_score

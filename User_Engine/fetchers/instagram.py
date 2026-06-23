@@ -52,9 +52,8 @@ def fetch_instagram_data(token: dict) -> dict:
 
 
 def _safe_monthly_reach(uid: str, at: str) -> int:
-    """Account reach over the last 28 days. Needs instagram_business_manage_insights.
-    Best-effort: returns 0 if the scope isn't granted or the metric name has
-    changed, so it never breaks the analysis.
+    """Account reach over the last 28 days. Needs instagram_business_manage_insights 
+    returns 0 if it doesn't work, so it never breaks the analysis.
     """
     try:
         r = requests.get(f"{GRAPH}/{uid}/insights", params={

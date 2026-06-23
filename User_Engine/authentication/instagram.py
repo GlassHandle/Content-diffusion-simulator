@@ -8,7 +8,7 @@ load_dotenv()
 
 SCOPES = [
     "instagram_business_basic",
-    # "instagram_business_manage_insights",   # uncomment once basic works
+    "instagram_business_manage_insights", 
 ]
 
 CLIENT_ID = os.getenv("INSTAGRAM_CLIENT_ID")
@@ -36,7 +36,7 @@ def ig_get_auth_url(state: str) -> str:
 
 
 def ig_exchange_code(code: str) -> dict:
-    """Exchange an auth code for a long-lived token dict. Caller stores it."""
+    """Exchange an auth code for a long-lived token dict. Our server stores it."""
     r = requests.post(TOKEN_URL, data={
         "client_id": CLIENT_ID,
         "client_secret": CLIENT_SECRET,
@@ -46,26 +46,27 @@ def ig_exchange_code(code: str) -> dict:
     })
     r.raise_for_status()
     short = r.json()
-    short_token = short["access_token"]
+    short_lived_token = short["access_token"]
     ig_user_id = short.get("user_id")
 
     r = requests.get(f"{GRAPH}/access_token", params={
         "grant_type": "ig_exchange_token",
         "client_secret": CLIENT_SECRET,
-        "access_token": short_token,
+        "access_token": short_lived_token,
     })
     r.raise_for_status()
     long = r.json()
+    long_lived_token=long["access_token"]
 
     return {
-        "access_token": long["access_token"],
+        "access_token": long_lived_token,
         "user_id": ig_user_id,
         "expires_at": time.time() + int(long.get("expires_in", 60 * 24 * 3600)),
     }
 
 
 def ig_credentials_from_token(token: dict) -> tuple[dict | None, dict]:
-    """Validate a stored IG token dict, refreshing if within 5 days of expiry.
+    """Validate a stored IG token from db, refreshing if within 5 days of expiry.
     Returns (valid_token_or_None, token_dict_to_persist).
     """
     if token.get("expires_at", 0) - time.time() < 5 * 24 * 3600:
