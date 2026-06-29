@@ -46,7 +46,7 @@ class ImageUnderstandingEngine(ImageColorAnalyzer):
         try:
             result: FacesAnalysis = self._vlm(image_path, _FACES_SCHEMA, FacesAnalysis, self.FACE_INSTRUCTION)
         except Exception:
-            logger.exception("Face analysis failed for %s", image_path)
+            logger.warning("Face analysis failed for %s", image_path)
             return {"face_count": 0, "faces": [], "emotions": []}
 
         faces = [{"dominant_emotion": f.dominant_emotion, "confidence": round(f.confidence, 3)} for f in result.faces]
