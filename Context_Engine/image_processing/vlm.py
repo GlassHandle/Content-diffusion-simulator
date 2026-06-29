@@ -1,10 +1,11 @@
 from __future__ import annotations
 
+import logging
 import os
 from typing import Any
-
 import ollama
 from pydantic import BaseModel
+logger = logging.getLogger(__name__)
 
 
 class ImageVLMClient:
@@ -14,7 +15,9 @@ class ImageVLMClient:
     MAX_IMAGE_DIM = 1280
 
     def __init__(self) -> None:
-        self.client = ollama.Client(host=os.environ.get("OLLAMA_HOST", "http://localhost:11434"))
+        host = os.environ.get("OLLAMA_HOST", "http://localhost:11434")
+        self.client = ollama.Client(host=host)
+        logger.info("VLM model: %s via Ollama at %s", self.MODEL, host)
 
     def call(self, image_path: str, schema: dict[str, Any], model_cls: type[BaseModel], instruction: str) -> Any:
         response = self.client.chat(

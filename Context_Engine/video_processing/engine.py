@@ -1,13 +1,22 @@
 from __future__ import annotations
-
 import json
 import logging
 import os
 import re
 import subprocess
+import sys
 import tempfile
 from pathlib import Path
 from typing import Any
+
+_nvidia_root = Path(sys.prefix) / "Lib" / "site-packages" / "nvidia"
+if _nvidia_root.is_dir():
+    for _pkg in _nvidia_root.iterdir():
+        _dll_dir = _pkg / "bin"
+        if _dll_dir.is_dir():
+            os.environ["PATH"] = str(_dll_dir) + os.pathsep + os.environ.get("PATH", "")
+            if hasattr(os, "add_dll_directory"):
+                os.add_dll_directory(str(_dll_dir))
 
 import cv2
 import librosa
@@ -36,7 +45,12 @@ class VideoUnderstandingEngine:
 
     def __init__(self, image_engine: Any | None = None) -> None:
         logger.info("Initializing Whisper (%s)...", self.WHISPER_SIZE)
-        self.whisper = WhisperModel(self.WHISPER_SIZE, compute_type="int8")
+        try:
+            self.whisper = WhisperModel(self.WHISPER_SIZE, device="cuda", compute_type="int8")
+            logger.info("Whisper device: GPU")
+        except Exception as exc:
+            self.whisper = WhisperModel(self.WHISPER_SIZE, device="cpu", compute_type="int8")
+            logger.info("Whisper device: CPU (CUDA unavailable: %s)", exc)
         self.image_engine = image_engine
 
     def transcribe(self, video_path: str) -> dict[str, Any]:
@@ -168,7 +182,7 @@ class VideoUnderstandingEngine:
         y, sr = librosa.load(video_path, sr=self.AUDIO_SR, mono=True)
         if y.size == 0:
             return {"has_audio": False}
-        tempo = float(librosa.beat.beat_track(y=y, sr=sr)[0])
+        tempo = float(np.atleast_1d(librosa.beat.beat_track(y=y, sr=sr)[0])[0])
         rms = float(np.mean(librosa.feature.rms(y=y)))
         flatness = float(np.mean(librosa.feature.spectral_flatness(y=y)))
         likely_music = flatness < self.MUSIC_FLATNESS_MAX and rms > self.MUSIC_RMS_MIN

@@ -28,6 +28,7 @@ class TextUnderstandingEngine:
         logger.info("Initializing text models (weights may download on first run)...")
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
         device_id = 0 if self.device == "cuda" else -1
+        logger.info("Text models device: %s", "GPU" if self.device == "cuda" else "CPU")
         self.sentiment = pipeline("sentiment-analysis", model=self.SENTIMENT_MODEL, device=device_id)
         self.emotion = pipeline("text-classification", model=self.EMOTION_MODEL, top_k=None, device=device_id)
 

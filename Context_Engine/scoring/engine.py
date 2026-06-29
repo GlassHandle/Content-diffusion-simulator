@@ -4,13 +4,14 @@ import json
 import logging
 import os
 from typing import Any
-
+from dotenv import load_dotenv
 from google import genai
 from google.genai import types
 from pydantic import ValidationError
 
 from .schemas import PrimaryScores
 
+load_dotenv()
 logger = logging.getLogger(__name__)
 
 
@@ -46,7 +47,7 @@ practical_value     0 = nothing actionable · 4 = a tip you might use · 7 = a h
                     it to do later."""
 
     def __init__(self, client: genai.Client | None = None) -> None:
-        self.client = client or genai.Client(api_key=os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY"))
+        self.client = client or genai.Client(api_key=os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY"))
         self._validate_weights()
 
     def score_content(self, feature_payload: dict[str, Any], extra_text: str = "") -> dict[str, Any]:
