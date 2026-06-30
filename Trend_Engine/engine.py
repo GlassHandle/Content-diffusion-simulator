@@ -2,6 +2,7 @@ from Collectors import (YoutubeCollector,RedditCollector,GoogleTrendsCollector)
 from Fallback import (RedditFallback,GoogleTrendsFallback,scraper)
 from Graph import (GraphBuilder,GraphEntityResolver,GraphStore,GraphPruner,GraphTagger,TagNodeBuilder)
 from Processors import TrendProcessor
+from Exporter import exporter
 
 TEXT_BUILDERS = {
     "reddit": lambda item:item.get("title","")+ " . "+ item.get("post_description",""),
@@ -102,6 +103,7 @@ class TrendEngine:
         self.build_graph(processed)
         self.prune()
         self.save()
+        exporter()
         return self.graph_builder.graph
     
 if __name__ == "__main__":
