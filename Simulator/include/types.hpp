@@ -49,11 +49,10 @@ struct Trend {
     vector<pair<string, double>> entities;
 };
 
-// P3
+// from user_engine
 struct Creator {
-    double seed_size = 500.0;
-    double algo_favorability = 1.0;
-    double consistency = 0.5;
+    double trust = 50, momentum = 0, niche_authority = 0, audience_quality = 50, volatility = 0;
+    double followers = 0, monthly_reach = 0, avg_engagement_rate = 0;
 };
 
 // Simulation Configs
