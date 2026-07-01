@@ -42,6 +42,18 @@ def init_db() -> None:
             )
             """
         )
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS content_files (
+                content_id TEXT PRIMARY KEY,
+                username   TEXT NOT NULL,
+                path       TEXT NOT NULL,
+                modality   TEXT,
+                created_at TEXT NOT NULL
+            )
+            """
+        )
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_content_username ON content_files (username)")
     purge_states()
 
 def save_token(user_id: str, platform: str, token: dict) -> None:
@@ -64,6 +76,32 @@ def get_token(user_id: str, platform: str) -> dict | None:
             (user_id, platform),
         ).fetchone()
     return json.loads(row["token_json"]) if row else None
+
+def add_content_file(content_id: str, username: str, path: str, modality: str | None) -> None:
+    with _connect() as conn:
+        conn.execute(
+            "INSERT INTO content_files (content_id, username, path, modality, created_at) VALUES (?, ?, ?, ?, ?)",
+            (content_id, username, path, modality, datetime.now(UTC).isoformat()),
+        )
+
+
+def list_content_files(username: str) -> list[dict]:
+    with _connect() as conn:
+        rows = conn.execute(
+            "SELECT content_id, path, modality, created_at FROM content_files WHERE username = ? ORDER BY created_at DESC",
+            (username,),
+        ).fetchall()
+    return [dict(r) for r in rows]
+
+
+def get_content_file(content_id: str) -> dict | None:
+    with _connect() as conn:
+        row = conn.execute(
+            "SELECT content_id, username, path, modality, created_at FROM content_files WHERE content_id = ?",
+            (content_id,),
+        ).fetchone()
+    return dict(row) if row else None
+
 
 def create_state(user_id: str, platform: str) -> str:
     purge_states()

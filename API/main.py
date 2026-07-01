@@ -16,7 +16,7 @@ db.init_db()
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     warmup_context_engine()
-    logger.info("Content Understanding models loaded; API ready.")
+    logger.info("Content Understanding + tagger models loaded; API ready.")
     yield
 
 app = FastAPI(title="Content Diffusion Simulator API", lifespan=lifespan)
