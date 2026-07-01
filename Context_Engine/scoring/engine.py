@@ -8,8 +8,7 @@ from dotenv import load_dotenv
 from google import genai
 from google.genai import types
 from pydantic import ValidationError
-
-from .schemas import PrimaryScores
+from .schemas import PrimaryScores, TOPICS
 
 load_dotenv()
 logger = logging.getLogger(__name__)
@@ -58,13 +57,35 @@ practical_value     0 = nothing actionable · 4 = a tip you might use · 7 = a h
             logger.exception("Gemini returned scores that failed validation.")
             raise
         composite = self._derive_composites(primary)
-        return {"scores": {dim: getattr(primary, dim).model_dump() for dim in self.DIMENSIONS}, "composite": composite, "model": self.MODEL}
+        return {
+            "scores": {dim: getattr(primary, dim).model_dump() for dim in self.DIMENSIONS},
+            "composite": composite,
+            "topics": sorted({t.value for t in primary.topics}),
+            "entities": list(dict.fromkeys(e for e in primary.entities if e.strip())),
+            "model": self.MODEL,
+        }
 
     def _build_prompt(self, feature_payload: dict[str, Any], extra_text: str) -> str:
         modality = feature_payload.get("modality", "unknown")
         features = feature_payload.get("extracted_features", feature_payload)
         text = extra_text.strip() or self._gather_text(features)
-        return f"Analyze this {modality} content and score it.\n\n=== EXTRACTED FEATURES ===\n{json.dumps(features, indent=2)}\n\n=== TEXT / TRANSCRIPT / CAPTION ===\n{text or '(none available)'}\n\n=== SCORING RUBRIC (use these 0-10 anchors) ===\n{self.RUBRIC}\n\nScore every dimension against the rubric, basing each number on the evidence above. Keep each reasoning to a single sentence."
+        topics = ", ".join(TOPICS)
+        return (
+            f"Analyze this {modality} content.\n\n"
+            f"=== EXTRACTED FEATURES ===\n{json.dumps(features, indent=2)}\n\n"
+            f"=== TEXT / TRANSCRIPT / CAPTION ===\n{text or '(none available)'}\n\n"
+            f"=== SCORING RUBRIC (use these 0-10 anchors) ===\n{self.RUBRIC}\n\n"
+            f"=== TOPICS (fixed list) ===\n{topics}\n\n"
+            "Do BOTH:\n"
+            "1) Score every dimension against the rubric, basing each number on the evidence above; "
+            "keep each reasoning to a single sentence.\n"
+            "2) Classify the content: pick the 1-3 'topics' from the fixed list that best capture what it is "
+            "ABOUT (subject or genre — judge intent: a joke about cooking is 'comedy', not 'food_cooking'); "
+            "and list 'entities' = the specific named subjects it references (real people, events, places, "
+            "brands, teams, works), using their common canonical names so they are recognizable "
+            "(e.g. 'FIFA World Cup' not 'the world cup', 'Lionel Messi' not 'Messi' or 'him'); "
+            "an empty list if there are no specific named subjects."
+        )
 
     @staticmethod
     def _gather_text(features: dict[str, Any]) -> str:

@@ -18,3 +18,7 @@ class AnalyzeResponse(BaseModel):
     modality: str
     extracted_features: dict[str, Any]
     engagement: Engagement
+    topics: dict[str, float]             
+    entities: list[str]                 
+    content_id: str                     
+    saved_to: str                       
