@@ -45,8 +45,8 @@ struct Content {
 
 // from trend_engine
 struct Trend {
-    std::array<double, NTOPICS> topic_trends{};         
-    std::vector<std::pair<std::string, double>> entities;
+    array<double, NTOPICS> topic_trends{};         
+    vector<pair<string, double>> entities;
 };
 
 // P3
@@ -66,7 +66,7 @@ struct Config {
 };
 
 struct SimContext {
-    const std::vector<Persona>& personas;
+    const vector<Persona>& personas;
     const Content& content;
     const Trend& trend;
     const Creator& creator;
