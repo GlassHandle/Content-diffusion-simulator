@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none">
+  <rect width="32" height="32" rx="8" fill="#059669" />
+  <!-- the Reech wave: a post launching into its reach curve + forecast echo -->
+  <circle cx="8" cy="22" r="2.5" fill="#ffffff" />
+  <path d="M8 22 C12 22 13 10 17 10 C21 10 21 16.5 25.5 16.5" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" />
+  <path d="M11 25.5 C14 25.5 14.8 16 18 16 C20.8 16 20.8 20.5 24 20.5" stroke="#ffffff" stroke-opacity="0.42" stroke-width="1.7" stroke-linecap="round" />
+</svg>

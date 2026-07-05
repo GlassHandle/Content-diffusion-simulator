@@ -1,0 +1,196 @@
+export const BRAND = {
+  name: 'Reech',
+  tagline: 'Simulate virality before you post.',
+}
+
+export const DIMENSIONS = [
+  'humor', 'curiosity', 'educational', 'novelty',
+  'controversy', 'emotional_intensity', 'relatability', 'practical_value',
+] as const
+
+export const TOPICS = [
+  'comedy', 'gaming', 'tech', 'fitness', 'food_cooking', 'beauty_fashion',
+  'travel', 'music', 'sports', 'education_howto', 'news_politics',
+  'finance_business', 'art_design', 'science', 'lifestyle_vlog',
+  'parenting_family', 'pets_animals', 'automotive', 'diy_crafts',
+  'motivation_selfhelp', 'relationships', 'nature_outdoors', 'film_tv',
+  'health_wellness',
+] as const
+
+export const QUOTES: { text: string; accent: string }[] = [
+  { text: 'Good things take time.', accent: 'time.' },
+  { text: 'Patience feeds reach.', accent: 'reach.' },
+  { text: 'Measure twice. Post once.', accent: 'once.' },
+  { text: 'Great posts are tested, not guessed.', accent: 'tested,' },
+  { text: '50,000 opinions are worth the wait.', accent: '50,000' },
+] as const
+
+export interface ContentAnalysis {
+  modality: string
+  dims: Record<string, number>        // 0..10
+  composites: { shareability: number; saveability: number } // 0..10
+  topics: string[]
+  entities: string[]
+}
+
+// Mock Data for L3
+export const mockContentAnalysis: ContentAnalysis = {
+  modality: 'video',
+  dims: {
+    humor: 8.4, curiosity: 6.9, educational: 3.2, novelty: 7.1,
+    controversy: 2.4, emotional_intensity: 6.2, relatability: 7.8, practical_value: 4.1,
+  },
+  composites: { shareability: 7.8, saveability: 4.6 },
+  topics: ['comedy', 'music'],
+  entities: ['Coachella', 'GoPro'],
+}
+
+export interface SimOutput {
+  expected_reach: number
+  reach_p10: number
+  reach_p50: number
+  reach_p90: number
+  viral_probability: number   
+  confidence: number          
+  mean_wave: number[]         
+}
+
+export const MOCK_PERSONAS = [
+  '@lunar.vibes', '@theo.makes', '@pixel_pia', '@ravenousreads', '@mika.moves',
+  '@dex_daily', '@sol.and.co', '@nova_notes', '@quietstorm', '@byte.betty',
+  '@juno.jpg', '@ferntastic', '@40hz_kev', '@mars.malone', '@laine.loops',
+  '@coco.codes', '@driftwood.dan', '@ellie.elevates', '@grimgrins', '@haze.hana',
+  '@indigo.ito', '@kip.clips', '@mossy.mae', '@orbit.olly', '@piper.plays',
+  '@rune.rae', '@tidal.tom', '@vee.visuals', '@wilde.wren', '@zamora.zed',
+]
+
+// Mock Data for L4
+export const mockSimOutput: SimOutput = {
+  expected_reach: 128_400,
+  reach_p10: 12_300,
+  reach_p50: 84_000,
+  reach_p90: 412_000,
+  viral_probability: 0.18,
+  confidence: 0.62,
+  mean_wave: [480, 1150, 2600, 5900, 12400, 19800, 16200, 9700, 4600, 1700, 600],
+}
+
+// Mock Data for L2
+export const mockCreator = {
+  handle: '@edifysphere',
+  platform: 'instagram',
+  trust: 62,
+  momentum: 41,
+  niche_authority: 55,
+  audience_quality: 70,
+  volatility: 22,
+}
+
+// Mock Data for L5
+export interface Suggestion {
+  title: string
+  detail: string
+  impact: 'high' | 'medium' | 'low'
+}
+
+export const mockSuggestions: Suggestion[] = [
+  {
+    title: 'Front-load the payoff in the first 2 seconds',
+    detail:
+      'Retention is your weakest lever this run. Moving the hook earlier lifts wave-1 completion, which is what the feed reads before promoting to a bigger audience.',
+    impact: 'high',
+  },
+  {
+    title: 'Lean into the humor angle',
+    detail:
+      'Humor scored 8.4/10 and drives your shareability. Sharpening it widens the p90 tail — the difference between a good run and a viral one.',
+    impact: 'high',
+  },
+  {
+    title: 'Ride the "Coachella" entity while it trends',
+    detail:
+      'This entity is trending now. Posting within the next 48h aligns you with the current wave and boosts algorithmic favorability.',
+    impact: 'medium',
+  },
+  {
+    title: 'Add a save-worthy takeaway',
+    detail:
+      'Saveability is 4.6/10. A single practical tip or list gives viewers a reason to save — a strong signal the algorithm rewards.',
+    impact: 'low',
+  },
+]
+
+// The LandingPage images URLSs builder
+const U = (id: string) => `https://images.unsplash.com/photo-${id}?auto=format&fit=crop&w=400&q=70`
+
+export const CONTENT_FEED = [
+  U('1504674900247-0877df9cc836'), // food
+  U('1476514525535-07fb3b4ae5f1'), // travel stairs
+  U('1542751371-adc38448a05e'),    // gaming
+  U('1490481651871-ab68de25d43d'), // fashion
+  U('1543466835-00a7907e9de1'),    // dog
+  U('1517836357463-d25dfeac3438'), // fitness
+  U('1495474472287-4d71bcdd2085'), // coffee
+  U('1503376780353-7e6692767b70'), // car
+  U('1513364776144-60967b0f800f'), // art/neon
+  U('1441974231531-c6227db76b6e'), // forest
+  U('1518770660439-4636190af475'), // tech
+  U('1507525428034-b723cf961d3e'), // beach
+]
+
+// Images for scroll animation
+export const POST_IMAGE = 'https://images.unsplash.com/photo-1490481651871-ab68de25d43d?auto=format&fit=crop&w=1000&q=75'
+
+export const TRENDING = [
+  { label: 'FIFA World Cup', heat: 0.96, match: false, img: U('1522778119026-d647f0596c20') },
+  { label: 'Comedy & memes', heat: 0.9, match: false, img: U('1513364776144-60967b0f800f') },
+  { label: 'Streetwear drops', heat: 0.80, match: true, img: U('1556906781-9a412961c28c') },
+  { label: 'NBA Playoffs', heat: 0.73, match: false, img: U('1546519638-68e109498ffc') },
+  { label: 'Festival season', heat: 0.68, match: true, img: U('1470229722913-7c0e2dbbafd3') },
+  { label: 'Minimal aesthetic', heat: 0.62, match: true, img: U('1479064555552-3ef4979f8908') },
+] as const
+
+export const STORY_NICHES = [
+  { name: 'Travel Enthusiast', aff: 0.9, img: 'https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&w=240&q=70' },
+  { name: 'Minimalist Creator', aff: 0.74, img: 'https://images.unsplash.com/photo-1487958449943-2429e8be8625?auto=format&fit=crop&w=240&q=70' },
+  { name: 'Tech Reviewer', aff: 0.63, img: 'https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=240&q=70' },
+  { name: 'Food Explorer', aff: 0.42, img: 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=240&q=70' },
+  { name: 'Fitness Audience', aff: 0.36, img: 'https://images.unsplash.com/photo-1517836357463-d25dfeac3438?auto=format&fit=crop&w=240&q=70' },
+] as const
+
+// Results meanings
+export const GLOSSARY: { group: string; blurb: string; terms: { term: string; def: string }[] }[] = [
+  {
+    group: 'The forecast',
+    blurb: 'We don’t predict your post once — we replay it 10,000 times with realistic randomness, then tell you what usually happened.',
+    terms: [
+      { term: 'Expected reach', def: 'Our best single guess at how many people will see this post — the average across all 10,000 runs.' },
+      { term: 'Reach range', def: 'The “quiet day” and “if it pops” numbers. 8 out of 10 runs landed between them — the feed is never a sure thing.' },
+      { term: 'Viral probability', def: 'The share of runs where your post broke past the viral line. 18% means roughly 1 in 5 timelines, this one takes off.' },
+      { term: 'Confidence', def: 'How tightly the 10,000 runs agreed with each other. Higher = a steadier, more predictable outcome.' },
+      { term: 'Waves', def: 'The algorithm shows your post in rounds. Each wave is a bigger, broader audience — it keeps spreading while each wave keeps reacting well.' },
+      { term: '10,000 runs', def: 'A “Monte Carlo” simulation — fancy words for rolling the dice ten thousand times so one lucky roll can’t fool you.' },
+    ],
+  },
+  {
+    group: 'Your content',
+    blurb: 'The AI reads your post like a very attentive viewer and scores what it finds, 0–10.',
+    terms: [
+      { term: 'The 8 dimensions', def: 'Humor, curiosity, educational, novelty, controversy, emotional intensity, relatability, and practical value — the creative ingredients that make people stop scrolling.' },
+      { term: 'Shareability', def: 'How likely a viewer is to send this to a friend. Shares are the strongest signal the algorithm rewards.' },
+      { term: 'Saveability', def: 'How likely someone is to bookmark it for later — a quieter signal, but the algorithm notices.' },
+      { term: 'Topics & entities', def: 'What your post is about (comedy, music…) and the named things in it (events, brands, people). These get matched against what’s trending right now.' },
+    ],
+  },
+  {
+    group: 'Your creator profile',
+    blurb: 'Your account changes how the same post performs — so the simulation is calibrated to you.',
+    terms: [
+      { term: 'Trust', def: 'How reliable the platform’s algorithm considers your account. Higher trust = your posts get promoted more readily.' },
+      { term: 'Momentum', def: 'How fast you’ve been growing lately. Momentum warms up your starting audience.' },
+      { term: 'Niche authority', def: 'How strongly you own your corner of the feed. Authority pushes you to the right people faster.' },
+      { term: 'Audience quality', def: 'How real and engaged your followers are — a loyal 1K beats a sleepy 100K.' },
+      { term: 'Volatility', def: 'How much your results swing from post to post. High volatility widens your forecast range — more risk, more upside.' },
+    ],
+  },
+] as const
