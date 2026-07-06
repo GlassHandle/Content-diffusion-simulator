@@ -1,4 +1,4 @@
-// g++ -std=c++17 -O2 -Wall -Wextra -Iinclude src/*.cpp -static -o simulator.exe
+// first build the simulator using build.bat
 // simulator.exe --content <name> --creator <name> [--runs N] [--seed S] [--data DIR] [--pretty]
 
 #include "loaders.hpp"
