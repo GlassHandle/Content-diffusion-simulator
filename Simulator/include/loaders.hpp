@@ -1,7 +1,4 @@
-//P1
-
 #pragma once
-// Implement in src/loaders.cpp
 #include "types.hpp"
 #include <string>
 #include <vector>

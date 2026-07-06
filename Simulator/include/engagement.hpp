@@ -1,5 +1,3 @@
-//P2
-
 #pragma once
 #include "types.hpp"
 
@@ -8,4 +6,5 @@ struct EngagementResult {
     double watch = 0, like = 0, comment = 0, share = 0, save = 0, follow = 0;
 };
 
-EngagementResult engage(const Persona& p, const Content& c, const Trend& t, const Config& cfg);
+EngagementResult engage(const Persona& p, const Content& c, const Trend& t);
+double compute_trend_alignment(const Content& c, const Trend& t);

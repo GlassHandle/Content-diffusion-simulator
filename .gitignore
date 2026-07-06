@@ -1,10 +1,12 @@
 .env
 data
 __pycache__
-*.json
 Tags_dataset
 *.mp4
 *.jpeg
 
 #virtual environment
 env
+
+#simulator build artifacts
+Simulator/*.exe

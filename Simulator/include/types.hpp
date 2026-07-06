@@ -34,34 +34,38 @@ struct Persona {
     array<double, NTOPICS> interests{};
 };
 
-// from context_engine
+// from context_engine (+ tags typed by the creator in the upload form)
 struct Content {
     string content_id, modality;
-    array<double, NDIMS> dims{};                    
+    array<double, NDIMS> dims{};
     double shareability = 0, saveability = 0;
-    array<double, NTOPICS> topics{};                  
-    vector<string> entities;                
+    array<double, NTOPICS> topics{};
+    vector<string> entities;
+    vector<string> tags;      
 };
 
 // from trend_engine
 struct Trend {
-    array<double, NTOPICS> topic_trends{};         
+    array<double, NTOPICS> topic_trends{};
     vector<pair<string, double>> entities;
+    vector<pair<string, double>> tag_trends;  
+    double content_alignment = 0;
 };
 
 // from user_engine
 struct Creator {
     double trust = 50, momentum = 0, niche_authority = 0, audience_quality = 50, volatility = 0;
     double followers = 0, monthly_reach = 0, avg_engagement_rate = 0;
+    double posting_freq = 8.0;  
 };
 
 // Simulation Configs
 struct Config {
     int runs = 5000;   // Monte Carlo iterations
-    int max_waves = 12;     
-    int min_wave = 20;     
-    double viral_threshold = 0.2;   
-    unsigned base_seed = 42;    
+    int max_waves = 14;
+    int min_wave = 20;  // smallest wave size
+    double viral_threshold = 0.3;   
+    unsigned base_seed = 42;
 };
 
 struct SimContext {

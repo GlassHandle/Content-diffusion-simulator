@@ -1,5 +1,3 @@
-// P4
-
 #pragma once
 #include "types.hpp"
 #include <vector>
@@ -11,6 +9,8 @@ struct SimOutput {
     double viral_probability = 0;
     double confidence = 0;
     vector<double> mean_wave;
+    vector<double> wave_p10, wave_p50, wave_p90;
+    double likes = 0, comments = 0, shares = 0, saves = 0, follows = 0;
 };
 
 SimOutput run_montecarlo(const SimContext& ctx);
