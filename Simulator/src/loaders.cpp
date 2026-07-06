@@ -157,20 +157,26 @@ Creator load_creator(const string& path) {
         c.volatility = num(s, "creator_volatility_score");
     }
     if (j.contains("raw_metrics")) {
-        // find net mertices from both platforms
+        // find net metrics from both platforms. The L2 scorer names them
+        // differently per platform: instagram = followers + monthly_reach,
+        // youtube = subscribers + avg_views_per_video (x freq = monthly views).
         double er_num = 0, fr_num = 0, den = 0;
         for (auto& [platform, m] : j["raw_metrics"].items()) {
             (void)platform;
             if (!m.is_object() || m.empty()) continue;
             double followers = num(m, "followers");
+            if (followers <= 0) followers = num(m, "subscribers");
+            double freq  = num(m, "posting_freq_monthly");
+            double reach = num(m, "monthly_reach");
+            if (reach <= 0) reach = num(m, "avg_views_per_video") * max(freq, 1.0);
             c.followers += followers;
-            c.monthly_reach += num(m, "monthly_reach");
+            c.monthly_reach += reach;
             er_num += num(m, "avg_engagement_rate") * max(followers, 1.0);
-            fr_num += num(m, "posting_freq_monthly") * max(followers, 1.0);
+            fr_num += freq * max(followers, 1.0);
             den += max(followers, 1.0);
         }
         if (den > 0) c.avg_engagement_rate = er_num / den;
-        if (den > 0 && fr_num > 0) c.posting_freq = fr_num / den; 
+        if (den > 0 && fr_num > 0) c.posting_freq = fr_num / den;
     }
     return c;
 }

@@ -29,8 +29,8 @@ static void usage(const char* argv0) {
 }
 
 // newest file in dir whose name ends with suffix (timestamped names sort
-// lexicographically = chronologically, so max name = latest analysis)
-static string newest_matching(const fs::path& dir, const string& suffix) {
+// lexicographically = chronologically, so max name = latest analysis).
+static string newest_matching(const fs::path& dir, const string& suffix, size_t prefix_len = 0) {
     string best;
     error_code ec;
     if (!fs::is_directory(dir, ec)) return best;
@@ -39,6 +39,7 @@ static string newest_matching(const fs::path& dir, const string& suffix) {
         string fn = e.path().filename().string();
         if (fn.size() >= suffix.size() &&
             fn.compare(fn.size() - suffix.size(), suffix.size(), suffix) == 0 &&
+            (prefix_len == 0 || fn.size() == prefix_len + suffix.size()) &&
             fn > best) best = fn;
     }
     return best.empty() ? best : (dir / best).string();
@@ -65,7 +66,7 @@ static string resolve_creator(const fs::path& data, const string& name) {
     if (fs::is_regular_file(name, ec)) return name;              // direct path
     fs::path root = data / "creators";
     if (fs::is_regular_file(root / name, ec)) return (root / name).string();
-    return newest_matching(root, "-" + name + "-creator.json");  // user id
+    return newest_matching(root, "-" + name + "-creator.json", 19);  // user id
 }
 
 int main(int argc, char** argv) {

@@ -18,7 +18,7 @@ CONTENT_DIR.mkdir(parents=True, exist_ok=True)
 
 router = APIRouter(
     prefix="/context",
-    tags=["Layer 3 - Content Understanding"]
+    tags=["Layer 3 - Context Engine"]
 )
 
 engine = ContentUnderstandingEngine()

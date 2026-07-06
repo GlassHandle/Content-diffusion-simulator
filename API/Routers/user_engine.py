@@ -11,7 +11,7 @@ OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
 router = APIRouter(
     prefix="/user",
-    tags=["Layer 2 - Creator Intelligence"]
+    tags=["Layer 2 - User Engine"]
 )
 
 
@@ -124,8 +124,14 @@ def analyze_creator(user_id: str = Query(...)):
         "errors": errors,
     }
 
-    filename = now.strftime("%Y-%m-%d_%H-%M-%S") + f"-{_safe(user_id)}-creator.json"
-    with open(OUTPUT_DIR / filename, "w", encoding="utf-8") as f:
+    stamp = now.strftime("%Y-%m-%d_%H-%M-%S")
+    out_path = OUTPUT_DIR / f"{stamp}-{_safe(user_id)}-creator.json"
+    n = 2
+    while out_path.exists():
+        out_path = OUTPUT_DIR / f"{stamp}-{_safe(user_id)}-{n}-creator.json"
+        n += 1
+    with open(out_path, "w", encoding="utf-8") as f:
         json.dump(result, f, indent=4)
+    db.add_creator_file(user_id, str(out_path))
 
     return JSONResponse(content=result)

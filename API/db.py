@@ -42,6 +42,8 @@ def init_db() -> None:
             )
             """
         )
+
+        # For storing path to context_engine data for a user
         conn.execute(
             """
             CREATE TABLE IF NOT EXISTS content_files (
@@ -54,6 +56,18 @@ def init_db() -> None:
             """
         )
         conn.execute("CREATE INDEX IF NOT EXISTS idx_content_username ON content_files (username)")
+
+        # For storing path to user_engine data for a user
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS creator_files (
+                user_id    TEXT NOT NULL,
+                path       TEXT NOT NULL,
+                created_at TEXT NOT NULL
+            )
+            """
+        )
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_creator_user ON creator_files (user_id)")
     purge_states()
 
 def save_token(user_id: str, platform: str, token: dict) -> None:
@@ -92,6 +106,23 @@ def list_content_files(username: str) -> list[dict]:
             (username,),
         ).fetchall()
     return [dict(r) for r in rows]
+
+
+def add_creator_file(user_id: str, path: str) -> None:
+    with _connect() as conn:
+        conn.execute(
+            "INSERT INTO creator_files (user_id, path, created_at) VALUES (?, ?, ?)",
+            (user_id, path, datetime.now(UTC).isoformat()),
+        )
+
+
+def get_latest_creator_file(user_id: str) -> dict | None:
+    with _connect() as conn:
+        row = conn.execute(
+            "SELECT user_id, path, created_at FROM creator_files WHERE user_id = ? ORDER BY created_at DESC LIMIT 1",
+            (user_id,),
+        ).fetchone()
+    return dict(row) if row else None
 
 
 def get_content_file(content_id: str) -> dict | None:
