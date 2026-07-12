@@ -1,14 +1,17 @@
 // first build the simulator using build.bat
 // simulator.exe --content <name> --creator <name> [--runs N] [--seed S] [--data DIR] [--pretty]
+//               [--scenarios FILE] 
 
 #include "loaders.hpp"
 #include "engagement.hpp"
 #include "propagation.hpp"
 #include "montecarlo.hpp"
 #include "third_party/json.hpp"
+#include <algorithm>
 #include <chrono>
 #include <cstdio>
 #include <filesystem>
+#include <fstream>
 #include <iostream>
 #include <string>
 
@@ -23,9 +26,10 @@ static double ms_since(clk::time_point t0) {
 static void usage(const char* argv0) {
     fprintf(stderr,
         "usage: %s --content <name> [--creator <name>]\n"
-        "          [--runs N] [--seed S] [--data DIR] [--pretty]\n"
+        "          [--runs N] [--seed S] [--data DIR] [--pretty] [--scenarios FILE]\n"
         "  content: username | content file name | path\n"
-        "  creator: user id  | creator file name | path\n", argv0);
+        "  creator: user id  | creator file name | path\n"
+        "  scenarios: JSON {runs, scenarios:[{label, ops:[...]}]} -> adds \"scenarios\" to output\n", argv0);
 }
 
 // newest file in dir whose name ends with suffix (timestamped names sort
@@ -69,10 +73,79 @@ static string resolve_creator(const fs::path& data, const string& name) {
     return newest_matching(root, "-" + name + "-creator.json", 19);  // user id
 }
 
+// find index of dimension from the name
+static int dim_index(const string& n){
+    for (int i=0;i<NDIMS; ++i){
+        if (n == DIM_NAMES[i]) return i;
+    } 
+    return -1; 
+}
+
+// find index of topic from name
+static int topic_index(const string& n) { 
+    for (int i=0;i<NTOPICS; ++i){
+        if (n == TOPIC_NAMES[i]) return i;
+    }
+    return -1;
+}
+
+static double clamp010(double x) {
+    return x < 0.0 ? 0.0 : (x > 10.0 ? 10.0 : x);
+}
+
+// apply the operation to a particular content
+static void apply_op(Content& c, const json& op) {
+    if (op.contains("dim")) {
+        int idx = dim_index(op["dim"].get<string>());
+        if (idx >= 0) c.dims[idx] = clamp010(c.dims[idx] + op.value("delta", 0.0));
+    } else if (op.contains("composite")) {
+        string w = op["composite"].get<string>();
+        double d = op.value("delta", 0.0);
+        if (w == "shareability")      c.shareability = clamp010(c.shareability + d);
+        else if (w == "saveability")  c.saveability  = clamp010(c.saveability + d);
+    } else if (op.contains("topic")) {
+        int idx = topic_index(op["topic"].get<string>());
+        if (idx >= 0) c.topics[idx] = op.value("set", 1.0);
+    } else if (op.contains("add_entity")) {
+        string e = op["add_entity"].get<string>();
+        if (find(c.entities.begin(), c.entities.end(), e) == c.entities.end()) c.entities.push_back(e);
+    } else if (op.contains("add_tag")) {
+        string t = op["add_tag"].get<string>();
+        if (find(c.tags.begin(), c.tags.end(), t) == c.tags.end()) c.tags.push_back(t);
+    }
+}
+
+static json run_scenarios(const vector<Persona>& personas, const Content& base, const Trend& base_trend, const Creator& creator, const Config& cfg, const json& spec) {
+    Config vcfg = cfg;   
+    // for scenarios we run 2000 monte carlo iterations rather than 5000 
+    // in engine.py analyse function we pass the value of runs                     
+    vcfg.runs = spec.value("runs", 2000);       
+    json arr = json::array();
+    for (const auto& sc : spec.at("scenarios")) {
+        Content v = base;
+        for (const auto& op : sc.value("ops", json::array())){
+            apply_op(v, op);
+        }
+        Trend vt = base_trend;
+        vt.content_alignment = compute_trend_alignment(v, vt);
+        SimContext vctx{personas, v, vt, creator, vcfg};
+        SimOutput o = run_montecarlo(vctx);
+        arr.push_back({
+            {"label",             sc.value("label", string())},
+            {"expected_reach",    o.expected_reach},
+            {"viral_probability", o.viral_probability},
+            {"reach_p50",         o.reach_p50},
+            {"reach_p90",         o.reach_p90},
+            {"trend_alignment",   vt.content_alignment},
+        });
+    }
+    return arr;
+}
+
 int main(int argc, char** argv) {
     string personas_path = "Personas/personas.jsonl";
     string data_dir = "../data";
-    string content_name, creator_name;
+    string content_name, creator_name, scenarios_path;
     Config cfg;
     bool pretty = false;
 
@@ -87,6 +160,7 @@ int main(int argc, char** argv) {
         else if (a == "--data") data_dir = next();
         else if (a == "--runs") cfg.runs = stoi(next());
         else if (a == "--seed") cfg.base_seed = static_cast<unsigned>(stoul(next()));
+        else if (a == "--scenarios") scenarios_path = next();
         else if (a == "--pretty") pretty = true;
         else if (a == "--help" || a == "-h") { usage(argv[0]); return 0; }
         else { fprintf(stderr, "unknown arg: %s\n", a.c_str()); usage(argv[0]); return 2; }
@@ -157,7 +231,19 @@ int main(int argc, char** argv) {
                 {"follows",  out.follows},
             }},
         };
-        cout << (pretty ? result.dump(2) : result.dump()) << endl;
+
+        // Layer 5: new scenarios re-simulated on the same pool + seed.
+        if (!scenarios_path.empty()) {
+            ifstream sf(scenarios_path);
+            if (!sf) throw runtime_error("cannot open scenarios file: " + scenarios_path);
+            json spec; sf >> spec;
+            auto t2 = clk::now();
+            result["scenarios"] = run_scenarios(personas, content, trend, creator, cfg, spec);
+            fprintf(stderr, "[sim] %zu scenarios re-simulated (%.0f ms)\n",
+                    result["scenarios"].size(), ms_since(t2));
+        }
+
+        cout<<(pretty ? result.dump(2) : result.dump()) << endl;
         return 0;
     } catch (const exception& e) {
         fprintf(stderr, "[sim] FATAL: %s\n", e.what());

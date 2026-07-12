@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import re
 import shutil
 import tempfile
 import uuid
@@ -28,15 +29,44 @@ def warmup() -> None:
     _ = engine.image_engine
     _ = engine.video_engine
 
-def _content_vector(result: dict) -> dict:
+def _normalize_tags(raw: object) -> list[str]:
+    if raw is None:
+        return []
+    items: list
+    if isinstance(raw, str):
+        s = raw.strip()
+        if not s:
+            return []
+        try:
+            parsed = json.loads(s)
+            items = parsed if isinstance(parsed, list) else [parsed]
+        except json.JSONDecodeError:
+            items = re.split(r"[,\n]+", s)
+    elif isinstance(raw, (list, tuple)):
+        items = list(raw)
+    else:
+        items = [raw]
+
+    out: list[str] = []
+    seen: set[str] = set()
+    for t in items:
+        t = str(t).strip()
+        if t and t.lower() not in seen:
+            seen.add(t.lower())
+            out.append(t)
+    return out
+
+
+def _content_vector(result: dict, tags: list[str]) -> dict:
     eng = result.get("engagement", {}) or {}
     dims = {dim: sc.get("score") for dim, sc in (eng.get("scores") or {}).items()}
     topic_set = set(eng.get("topics") or [])
     return {
-        "dims": dims,                                                     
-        "composites": eng.get("composite", {}),                          
-        "topics": {t: (1.0 if t in topic_set else 0.0) for t in TOPICS},  
-        "entities": list(eng.get("entities") or []),                      
+        "dims": dims,
+        "composites": eng.get("composite", {}),
+        "topics": {t: (1.0 if t in topic_set else 0.0) for t in TOPICS},
+        "entities": list(eng.get("entities") or []),
+        "tags": tags,  
     }
 
 
@@ -66,10 +96,11 @@ def _store_content(username: str, result: dict, vec: dict) -> tuple[str, str]:
     return content_id, str(path)
 
 
-def _analyze_and_store(result: dict, username: str) -> dict:
-    vec = _content_vector(result)
+def _analyze_and_store(result: dict, username: str, tags: list[str]) -> dict:
+    vec = _content_vector(result, tags)
     content_id, saved_to = _store_content(username, result, vec)
-    return {**result, "topics": vec["topics"], "entities": vec["entities"], "content_id": content_id, "saved_to": saved_to}
+    return {**result, "topics": vec["topics"], "entities": vec["entities"],
+            "tags": vec["tags"], "content_id": content_id, "saved_to": saved_to}
 
 
 def _analyze_upload(file: UploadFile, text: str | None, *, is_video: bool) -> dict:
@@ -90,25 +121,27 @@ def _analyze_upload(file: UploadFile, text: str | None, *, is_video: bool) -> di
 def analyze_text(body: TextAnalyzeRequest, username: str = Query(...)):
     try:
         result = engine.analyze(text=body.text)
-        return _analyze_and_store(result, username)
+        return _analyze_and_store(result, username, _normalize_tags(body.tags))
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.post("/analyze/image", response_model=AnalyzeResponse)
-def analyze_image(username: str = Query(...), file: UploadFile = File(...), text: str | None = Form(None)):
+def analyze_image(username: str = Query(...), file: UploadFile = File(...),
+                  text: str | None = Form(None), tags: str | None = Form(None)):
     try:
         result = _analyze_upload(file, text, is_video=False)
-        return _analyze_and_store(result, username)
+        return _analyze_and_store(result, username, _normalize_tags(tags))
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.post("/analyze/video", response_model=AnalyzeResponse)
-def analyze_video(username: str = Query(...), file: UploadFile = File(...), text: str | None = Form(None)):
+def analyze_video(username: str = Query(...), file: UploadFile = File(...),
+                  text: str | None = Form(None), tags: str | None = Form(None)):
     try:
         result = _analyze_upload(file, text, is_video=True)
-        return _analyze_and_store(result, username)
+        return _analyze_and_store(result, username, _normalize_tags(tags))
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

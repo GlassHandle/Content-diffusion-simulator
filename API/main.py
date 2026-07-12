@@ -1,10 +1,8 @@
 import logging
 from contextlib import asynccontextmanager
-
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-
-from .Routers import user_engine, context_engine, simulator
+from .Routers import user_engine, context_engine, simulator, analyse
 from .Routers.context_engine import warmup as warmup_context_engine
 from . import db
 
@@ -35,6 +33,7 @@ app.add_middleware(
 app.include_router(user_engine)
 app.include_router(context_engine)
 app.include_router(simulator)
+app.include_router(analyse)
 
 @app.get("/")
 def root():
@@ -44,5 +43,6 @@ def root():
             "Layer 2 - User Engine",
             "Layer 3 - Context Engine",
             "Layer 4 - Simulator",
+            "Layer 5 - Analyse",
         ],
     }
