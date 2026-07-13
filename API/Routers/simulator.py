@@ -19,7 +19,7 @@ router = APIRouter(
 @router.post("")
 def simulate(
     content_id: str = Query(..., min_length=1, description="content_id returned by /context/analyze (also accepts a content file name or username)"),
-    user_id: str = Query(..., min_length=1, description="creator user_id analyzed via /user/creator/analyze"),
+    user_id: str = Query(..., min_length=1, description="creator user_id analyzed via /creator/analyze"),
     runs: int = Query(5000, ge=100, le=20000, description="Monte Carlo runs (>=2000 recommended)"),
     seed: int = Query(42, description="fixed seed -> reproducible forecast"),
 ):

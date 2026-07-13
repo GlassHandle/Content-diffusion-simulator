@@ -18,7 +18,7 @@ router = APIRouter(
 @router.post("")
 def analyse(
     content_id: str = Query(..., min_length=1, description="content_id from /context/analyze (also accepts a content file name or username)"),
-    user_id: str = Query(..., min_length=1, description="creator user_id analyzed via /user/creator/analyze"),
+    user_id: str = Query(..., min_length=1, description="creator user_id analyzed via /creator/analyze"),
     runs: int = Query(5000, ge=100, le=20000, description="baseline Monte Carlo runs (headline forecast)"),
     scenario_runs: int = Query(1000, ge=200, le=8000, description="runs per counterfactual (paired seed keeps ranking stable at low counts)"),
     seed: int = Query(42, description="fixed seed -> reproducible forecast + paired counterfactuals"),

@@ -24,14 +24,19 @@ SYSTEM_PROMPT = (
 
 # Response schema for gemini
 def _schema():
+    class _Verdict(BaseModel):
+        title: str = Field(..., description="punchy 3-6 word headline conclusion for the whole post, with a period")
+        sub: str = Field(..., description="one supporting sentence; no exact numbers")
+
     class _Item(BaseModel):
         title: str = Field(..., description="imperative headline, ~4-8 words, no trailing period")
         detail: str = Field(..., description="1-2 sentences of concrete why, references the simulated lift")
 
-    class _Items(BaseModel):
+    class _Report(BaseModel):
+        verdict: _Verdict
         items: list[_Item]
 
-    return _Items
+    return _Report
 
 # convert ranked levers from rank_and_select() to json input for Gemini
 def _lever_brief(levers: list[dict]) -> str:
@@ -58,7 +63,7 @@ def _lever_brief(levers: list[dict]) -> str:
     return json.dumps(rows, indent=2)
 
 
-def _gemini_copy(levers: list[dict], forecast: dict) -> list[dict]:
+def _gemini_copy(levers: list[dict], forecast: dict) -> tuple[dict, list[dict]]:
     from google import genai
     from google.genai import types
 
@@ -71,7 +76,11 @@ def _gemini_copy(levers: list[dict], forecast: dict) -> list[dict]:
         f"  confidence: {round(forecast.get('confidence', 0) * 100)}%\n\n"
         "Levers, already ranked by simulated reach lift (keep this order):\n"
         f"{_lever_brief(levers)}\n\n"
-        "Write one suggestion per lever. Ground every quantitative claim ONLY in the "
+        "First write a VERDICT for the whole post: a punchy 3-6 word headline conclusion "
+        "(with a period, e.g. \"This one's got legs.\") plus one supporting sentence. Match it "
+        "to the forecast — a high viral probability and reach = a confident, positive verdict; "
+        "a low one = 'fixable, not there yet'. Do NOT put exact numbers in the verdict.\n"
+        "Then write one suggestion per lever. Ground every quantitative claim ONLY in the "
         "numbers given for THAT lever — its sim_reach_lift_pct and sim_viral_lift_points "
         "(e.g. 'lifted simulated reach ~12%', 'added ~3 pts to its viral odds'). Some "
         "levers ALSO include sim_p90_lift_pct: for those you MAY say it widens the upside "
@@ -106,10 +115,12 @@ def _gemini_copy(levers: list[dict], forecast: dict) -> list[dict]:
     items = parsed.items
     if len(items) != len(levers):
         raise ValueError(f"Gemini returned {len(items)} items for {len(levers)} levers")
-    return [
+    verdict = {"title": parsed.verdict.title.strip(), "sub": parsed.verdict.sub.strip()}
+    suggestions = [
         {"title": it.title.strip(), "detail": it.detail.strip(), "impact": r["impact"]}
         for it, r in zip(items, levers)
     ]
+    return verdict, suggestions
 
 # If gemini is unavailable then fallback for lever entities
 def _template_suggestion(r: dict) -> dict:
@@ -140,12 +151,23 @@ def _maxed_out() -> dict:
         "impact": "low",
     }
 
-# frontend ready suggestions
-def write_suggestions(levers: list[dict], forecast: dict) -> list[dict]:
+# deterministic verdict from the forecast (fallback + the no-lever case)
+def _rule_verdict(forecast: dict) -> dict:
+    p = forecast.get("viral_probability", 0.0)
+    if p >= 0.25:
+        return {"title": "This could blow up.", "sub": "Strong breakout signals across the crowd."}
+    if p >= 0.08:
+        return {"title": "This one's got legs.", "sub": "Dependable reach — with a real shot at more."}
+    return {"title": "Not yet. But it's fixable.", "sub": "A few edits could change this post's fate."}
+
+
+# frontend-ready report: { verdict: {title, sub}, suggestions: [{title, detail, impact}] }
+def write_report(levers: list[dict], forecast: dict) -> dict:
     if not levers:
-        return [_maxed_out()]
+        return {"verdict": _rule_verdict(forecast), "suggestions": [_maxed_out()]}
     try:
-        return _gemini_copy(levers, forecast)
-    except Exception as e: 
+        verdict, suggestions = _gemini_copy(levers, forecast)
+        return {"verdict": verdict, "suggestions": suggestions}
+    except Exception as e:
         logger.warning("Analyse copywriter: Gemini unavailable, using templates — %s", e)
-        return [_template_suggestion(r) for r in levers]
+        return {"verdict": _rule_verdict(forecast), "suggestions": [_template_suggestion(r) for r in levers]}

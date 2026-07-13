@@ -70,13 +70,14 @@ def analyze(content_arg: str, creator_arg: str | None, *, data_dir: str | os.Pat
 
     output = {k: raw[k] for k in _OUTPUT_FIELDS if k in raw}
     levers = lever_policy.rank_and_select(raw.get("scenarios", []), base_content, meta)
-    suggestions = copywriter.write_suggestions(levers, output)
+    report = copywriter.write_report(levers, output)
 
-    logger.info("Analyse: %d levers tested, %d suggestions (top lift %.1f%%)",len(raw.get("scenarios", [])) - 1, len(suggestions),levers[0]["delta_reach_pct"] if levers else 0.0)
+    logger.info("Analyse: %d levers tested, %d suggestions (top lift %.1f%%)",len(raw.get("scenarios", [])) - 1, len(report["suggestions"]),levers[0]["delta_reach_pct"] if levers else 0.0)
 
     return {
         "output": output,
-        "suggestions": suggestions,
+        "verdict": report["verdict"],
+        "suggestions": report["suggestions"],
         "content_id": raw.get("content_id"),
         "audience_pool": raw.get("audience_pool"),
         "trend_alignment": raw.get("trend_alignment"),

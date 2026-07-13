@@ -10,7 +10,6 @@ OUTPUT_DIR = Path(__file__).resolve().parent.parent.parent / "data" / "creators"
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
 router = APIRouter(
-    prefix="/user",
     tags=["Layer 2 - User Engine"]
 )
 
