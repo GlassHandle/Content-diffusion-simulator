@@ -135,18 +135,6 @@ Typical flow: connect a creator → analyze content → `/analyse` with the retu
 
 ---
 
-## Documentation
-
-Full design docs for every layer live in [`documentation/`](documentation/):
-
-- [Layer 1, Trend Engine](<documentation/Layer 1 (Trend Engine).md>)
-- [Layer 2, User Engine](<documentation/Layer 2 (User Engine).md>)
-- [Layer 3, Context Engine](<documentation/Layer 3 (Context Engine).md>)
-- [Layer 4, Simulator](<documentation/Layer 4 (Simulator).md>)
-- [Layer 5, Analyse Engine](<documentation/Layer 5 (Analyse Engine).md>)
-
----
-
 ## Datasets
 
 **Personas (Layer 4).** The simulator's 50,000-viewer audience is derived from **[NVIDIA Nemotron-Personas-USA](https://huggingface.co/datasets/nvidia/Nemotron-Personas-USA)**, a large, census-grounded population of synthetic personas. They are mapped by **Gemini Flash** into the simulator's persona schema and calibrated for content-viewing behavior (see the [Layer 4 documentation](<documentation/Layer 4 (Simulator).md>) for the calibration details). The compiled pool lives at `Simulator/Personas/personas.jsonl` (large, not tracked in git).
